@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#14111a">
+    <title>May &amp; Jay</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2032%2024%22%3E%3Ccircle%20cx%3D%2211%22%20cy%3D%2212%22%20r%3D%229%22%20fill%3D%22%23d97a92%22/%3E%3Ccircle%20cx%3D%2221%22%20cy%3D%2212%22%20r%3D%229%22%20fill%3D%22%236fa998%22%20style%3D%22mix-blend-mode%3Ascreen%22/%3E%3C/svg%3E">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,450;0,9..144,600;0,9..144,700;1,9..144,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="navbar" id="navbar">
+        <div class="navbar-left">
+            <div class="logo-mark" onclick="location.reload()" aria-label="Home" role="button" tabindex="0">
+                <span class="logo-dots"><span class="d-may"></span><span class="d-jay"></span></span>
+                <span class="logo">May &amp; Jay</span>
+            </div>
+            <ul class="nav-links" id="navLinks">
+                <li><a class="active" data-filter="all" role="button" tabindex="0" onclick="filterContent('all', this)">Home</a></li>
+                <li><a data-filter="movie" role="button" tabindex="0" onclick="filterContent('movie', this)">Movies</a></li>
+                <li><a data-filter="series" role="button" tabindex="0" onclick="filterContent('series', this)">Series</a></li>
+                <li><a data-filter="watchlist" role="button" tabindex="0" onclick="filterContent('watchlist', this)">Watchlist</a></li>
+                <li><a data-filter="alreadyWatched" role="button" tabindex="0" onclick="filterContent('alreadyWatched', this)">Watched</a></li>
+            </ul>
+        </div>
+        <div class="navbar-right">
+            <div class="search-box">
+                <span class="search-icon" aria-hidden="true">&#128269;</span>
+                <input type="text" id="searchInput" placeholder="Search..." oninput="handleSearch()" aria-label="Search titles">
+            </div>
+            <div class="avatar-mark" aria-label="May and Jay"><span class="a-may"></span><span class="a-jay"></span></div>
+            <a class="logout-link" role="button" tabindex="0" onclick="doLogout()" aria-label="Log out">Log out</a>
+            <button class="hamburger" id="hamburger" onclick="toggleMobileMenu()" aria-label="Menu">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+    </nav>
+
+    <div class="mobile-nav-overlay" id="mobileNavOverlay">
+        <a data-filter="all" class="active-mob" role="button" tabindex="0" onclick="mobileNavSelect('all', this)">Home</a>
+        <a data-filter="movie" role="button" tabindex="0" onclick="mobileNavSelect('movie', this)">Movies</a>
+        <a data-filter="series" role="button" tabindex="0" onclick="mobileNavSelect('series', this)">Series</a>
+        <a data-filter="watchlist" role="button" tabindex="0" onclick="mobileNavSelect('watchlist', this)">Watchlist</a>
+        <a data-filter="alreadyWatched" role="button" tabindex="0" onclick="mobileNavSelect('alreadyWatched', this)">Watched</a>
+    </div>
+
+    <section class="hero" id="hero">
+        <div class="hero-content" id="heroContent">
+            <div class="hero-eyebrow" id="heroEyebrow">FROM THE LIBRARY</div>
+            <h1 class="hero-title" id="heroTitle">Loading&hellip;</h1>
+            <div class="hero-meta">
+                <span class="hero-stars" id="heroStars"></span>
+                <span id="heroYear"></span>
+                <span id="heroDuration"></span>
+            </div>
+            <p class="hero-description" id="heroDescription"></p>
+            <div class="hero-buttons">
+                <button class="btn btn-primary" id="heroDetailsBtn">View details</button>
+                <button class="btn btn-ghost" id="heroSurpriseBtn">&#127922; Surprise us</button>
+            </div>
+        </div>
+        <div class="hero-fade-bottom"></div>
+    </section>
+
+    <div class="main-content" id="mainContent">
+        <div class="empty-state"><h2>Setting the scene&hellip;</h2><p>Loading your library.</p></div>
+    </div>
+
+    <div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+        <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" onclick="event.stopPropagation()">
+            <button class="modal-close" onclick="closeModal()" aria-label="Close">&#10005;</button>
+            <img class="modal-poster" id="modalPoster" src="" alt="" loading="lazy" onerror="this.onerror=null;this.src=PLACEHOLDER_BANNER;">
+            <div class="modal-body" id="modalBody"></div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="surpriseOverlay" onclick="closeSurprise(event)">
+        <div class="surprise-box" onclick="event.stopPropagation()">
+            <div class="surprise-img-wrap"><img id="surpriseImg" src="" alt=""></div>
+            <div class="surprise-text" id="surpriseText" aria-live="polite">Picking something for tonight&hellip;</div>
+            <div class="surprise-sub" id="surpriseSub" aria-live="polite">Hold tight</div>
+        </div>
+    </div>
+
+    <script src="data.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
