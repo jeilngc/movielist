@@ -952,7 +952,7 @@ body {
     display: flex;
     align-items: center;
     gap: 8px;
-    z-index: 999;
+    z-index: 2500;
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.25s ease, transform 0.25s ease;
