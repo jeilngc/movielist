@@ -498,57 +498,50 @@ function wirePlanForm(item) {
 
 function buildRateFormHTML(item) {
     const existing = item.watched && item.watched[currentRatingPerson];
-    const startRating = existing ? existing.rating : 3;
+    const startRating = existing ? existing.rating : 0;
     const startComment = existing ? (existing.comment || '') : '';
+    const personLabel = currentRatingPerson === 'may' ? 'May' : 'Jay';
+    const previewText = startRating > 0 ? (ratingToStars(startRating) + ' ' + Number(startRating).toFixed(1)) : 'Not yet rated';
     return '' +
         '<div class="rate-form" id="rateForm">' +
-        '<div class="rate-form-head">Rate it</div>' +
-        '<div class="person-toggle" id="personToggle">' +
-        '<button type="button" class="person-btn person-btn-may' + (currentRatingPerson === 'may' ? ' active' : '') + '" data-person="may">May</button>' +
-        '<button type="button" class="person-btn person-btn-jay' + (currentRatingPerson === 'jay' ? ' active' : '') + '" data-person="jay">Jay</button>' +
+        '<div class="rate-form-head">Rate it <span class="rating-as">rating as <strong>' + personLabel + '</strong></span>' +
+        '<button type="button" class="switch-person-link" id="switchPersonLink" title="Rate as the other person">Switch</button>' +
         '</div>' +
         '<div class="star-row">' +
-        '<input type="range" id="rateRange" min="0.5" max="5" step="0.5" value="' + startRating + '">' +
-        '<span class="star-preview" id="starPreview">' + ratingToStars(startRating) + ' ' + Number(startRating).toFixed(1) + '</span>' +
+        '<input type="range" id="rateRange" min="0" max="5" step="0.5" value="' + startRating + '">' +
+        '<span class="star-preview" id="starPreview">' + previewText + '</span>' +
         '</div>' +
         '<textarea id="rateComment" class="rate-comment" placeholder="Add a comment (optional)" maxlength="1000">' + escapeHtml(startComment) + '</textarea>' +
-        '<button type="button" class="btn btn-primary rate-submit-btn" id="rateSubmitBtn">Save rating</button>' +
+        '<button type="button" class="btn btn-primary rate-submit-btn" id="rateSubmitBtn">' + (startRating > 0 ? 'Save rating' : 'Save rating') + '</button>' +
         '<div class="rate-status" id="rateStatus"></div>' +
         '</div>';
 }
 
 function wireRateForm(item) {
-    const toggle = document.getElementById('personToggle');
     const range = document.getElementById('rateRange');
     const preview = document.getElementById('starPreview');
     const comment = document.getElementById('rateComment');
     const submitBtn = document.getElementById('rateSubmitBtn');
     const status = document.getElementById('rateStatus');
-    if (!toggle || !range || !submitBtn) return;
+    const switchLink = document.getElementById('switchPersonLink');
+    if (!range || !submitBtn) return;
 
     function updatePreview() {
         const v = Number(range.value);
-        preview.textContent = ratingToStars(v) + ' ' + v.toFixed(1);
-    }
-    function loadPersonValues() {
-        const existing = item.watched && item.watched[currentRatingPerson];
-        range.value = existing ? existing.rating : 3;
-        comment.value = existing ? (existing.comment || '') : '';
-        updatePreview();
+        preview.textContent = v > 0 ? (ratingToStars(v) + ' ' + v.toFixed(1)) : 'Not yet rated';
     }
 
     range.addEventListener('input', updatePreview);
 
-    toggle.querySelectorAll('.person-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            currentRatingPerson = btn.dataset.person;
+    if (switchLink) {
+        switchLink.addEventListener('click', () => {
+            currentRatingPerson = currentRatingPerson === 'may' ? 'jay' : 'may';
             localStorage.setItem('mj_person', currentRatingPerson);
-            toggle.querySelectorAll('.person-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            status.textContent = '';
-            loadPersonValues();
+            document.getElementById('modalBody').innerHTML = buildModalBodyHTML(item);
+            wireRateForm(item);
+            wirePlanForm(item);
         });
-    });
+    }
 
     submitBtn.addEventListener('click', async () => {
         submitBtn.disabled = true;
@@ -556,13 +549,14 @@ function wireRateForm(item) {
         status.textContent = '';
         status.classList.remove('rate-error');
         try {
+            const ratingValue = Number(range.value);
             const res = await fetch('/api/rate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     id: item.id,
                     person: currentRatingPerson,
-                    rating: Number(range.value),
+                    rating: ratingValue,
                     comment: comment.value.trim()
                 })
             });
@@ -576,8 +570,12 @@ function wireRateForm(item) {
             document.getElementById('modalBody').innerHTML = buildModalBodyHTML(data.item);
             wireRateForm(data.item);
             wirePlanForm(data.item);
-            document.getElementById('rateStatus').textContent = 'Saved!';
-            showToast('Rating saved!');
+            if (ratingValue === 0) {
+                showToast('Rating removed.');
+            } else {
+                document.getElementById('rateStatus').textContent = 'Saved!';
+                showToast('Rating saved!');
+            }
             renderAllCategories();
         } catch (e) {
             status.textContent = e.message || 'Something went wrong.';

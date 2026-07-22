@@ -135,14 +135,25 @@ async function handleRate(request, env) {
         }
 
         const item = items[itemIndex];
-        if (!item.watched) {
-            item.watched = {};
-        }
+        const numericRating = Number(rating);
 
-        item.watched[person] = {
-            rating: Number(rating),
-            comment: String(comment || '')
-        };
+        if (numericRating === 0) {
+            // A 0 rating means "remove this person's rating" (not yet rated).
+            if (item.watched) {
+                delete item.watched[person];
+                if (Object.keys(item.watched).length === 0) {
+                    item.watched = null;
+                }
+            }
+        } else {
+            if (!item.watched) {
+                item.watched = {};
+            }
+            item.watched[person] = {
+                rating: numericRating,
+                comment: String(comment || '')
+            };
+        }
 
         items[itemIndex] = item;
         await env.LIBRARY_KV.put(KV_KEY, JSON.stringify(items));

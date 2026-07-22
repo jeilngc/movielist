@@ -804,35 +804,37 @@ body {
     font-family: var(--font-display);
     font-weight: 600;
     font-size: 1.05rem;
-    margin-bottom: 12px;
-}
-.person-toggle {
-    display: flex;
-    gap: 8px;
     margin-bottom: 14px;
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    justify-content: space-between;
 }
-.person-btn {
-    flex: 1;
-    padding: 9px 12px;
-    border-radius: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    background: transparent;
+.rating-as {
+    font-family: var(--font-body);
+    font-weight: 400;
+    font-size: 0.8rem;
     color: var(--paper-dim);
+}
+.rating-as strong {
+    font-weight: 700;
+    color: var(--paper);
+}
+.switch-person-link {
     font-family: var(--font-body);
     font-weight: 600;
-    font-size: 0.85rem;
-    cursor: pointer;
-    transition: var(--transition);
-}
-.person-btn-may.active {
-    background: var(--may-soft);
-    border-color: var(--may);
-    color: var(--may);
-}
-.person-btn-jay.active {
-    background: var(--jay-soft);
-    border-color: var(--jay);
+    font-size: 0.78rem;
     color: var(--jay);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 2px 0;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+.switch-person-link:hover {
+    opacity: 0.8;
 }
 .star-row {
     display: flex;
@@ -952,7 +954,7 @@ body {
     display: flex;
     align-items: center;
     gap: 8px;
-    z-index: 999;
+    z-index: 2500;
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.25s ease, transform 0.25s ease;
