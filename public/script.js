@@ -367,6 +367,24 @@ function buildSyncMeterHTML(mayRating, jayRating) {
         '</div>';
 }
 
+function showToast(message, isError) {
+    let toast = document.getElementById('toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'toast';
+        toast.className = 'toast';
+        document.body.appendChild(toast);
+    }
+    toast.innerHTML = '<span class="toast-icon">' + (isError ? '⚠️' : '✓') + '</span><span>' + escapeHtml(message) + '</span>';
+    toast.classList.toggle('toast-error', !!isError);
+    // Restart the animation even if a toast is already showing.
+    toast.classList.remove('show');
+    void toast.offsetWidth;
+    toast.classList.add('show');
+    clearTimeout(showToast._timer);
+    showToast._timer = setTimeout(() => toast.classList.remove('show'), 2600);
+}
+
 function buildModalBodyHTML(item) {
     const avg = getAverageRating(item);
     const typeLabel = item.type === 'movie' ? 'Movie' : 'Series';
@@ -390,8 +408,12 @@ function buildModalBodyHTML(item) {
         existingRatingsHtml += '</div>';
     }
     let plannedDateHtml = '';
-    if (item.plannedDate) {
-        plannedDateHtml = '<div class="planned-date-display">📅 ' + escapeHtml(formatPlannedDate(item.plannedDate)) + '</div>';
+    if (item.watched) {
+        if (item.plannedDate) {
+            plannedDateHtml = '<div class="planned-date-display">📅 ' + escapeHtml(formatPlannedDate(item.plannedDate)) + '</div>';
+        }
+    } else {
+        plannedDateHtml = buildPlanFormHTML(item);
     }
     return '' +
         '<h2 class="modal-title" id="modalTitle">' + escapeHtml(item.title) + '</h2>' +
@@ -404,6 +426,74 @@ function buildModalBodyHTML(item) {
         existingRatingsHtml +
         plannedDateHtml +
         buildRateFormHTML(item);
+}
+
+function buildPlanFormHTML(item) {
+    return '' +
+        '<div class="plan-form" id="planForm">' +
+        '<div class="plan-form-head">📅 Plan a watch date</div>' +
+        '<div class="plan-row">' +
+        '<input type="date" id="planDateInput" value="' + (item.plannedDate || '') + '">' +
+        '<div class="plan-actions">' +
+        '<button type="button" class="btn btn-primary plan-save-btn" id="planSaveBtn">Save date</button>' +
+        (item.plannedDate ? '<button type="button" class="btn btn-ghost plan-clear-btn" id="planClearBtn">Clear</button>' : '') +
+        '</div>' +
+        '</div>' +
+        '<div class="rate-status" id="planStatus"></div>' +
+        '</div>';
+}
+
+function wirePlanForm(item) {
+    const input = document.getElementById('planDateInput');
+    const saveBtn = document.getElementById('planSaveBtn');
+    const clearBtn = document.getElementById('planClearBtn');
+    const status = document.getElementById('planStatus');
+    if (!input || !saveBtn) return;
+
+    async function savePlan(dateValue) {
+        saveBtn.disabled = true;
+        if (clearBtn) clearBtn.disabled = true;
+        status.textContent = '';
+        status.classList.remove('rate-error');
+        try {
+            const res = await fetch('/api/plan', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: item.id, plannedDate: dateValue || null })
+            });
+            const data = await res.json();
+            if (!res.ok || !data.ok) throw new Error(data.error || 'Failed to save.');
+
+            const idx = items.findIndex((i) => i.id === item.id);
+            if (idx !== -1) items[idx] = data.item;
+            currentModalItem = data.item;
+
+            document.getElementById('modalBody').innerHTML = buildModalBodyHTML(data.item);
+            wireRateForm(data.item);
+            wirePlanForm(data.item);
+            renderAllCategories();
+            showToast(dateValue ? 'Watch date saved!' : 'Watch date cleared.');
+        } catch (e) {
+            status.textContent = e.message || 'Something went wrong.';
+            status.classList.add('rate-error');
+            showToast(e.message || 'Something went wrong.', true);
+            saveBtn.disabled = false;
+            if (clearBtn) clearBtn.disabled = false;
+        }
+    }
+
+    saveBtn.addEventListener('click', () => {
+        if (!input.value) {
+            status.textContent = 'Pick a date first.';
+            status.classList.add('rate-error');
+            return;
+        }
+        savePlan(input.value);
+    });
+
+    if (clearBtn) {
+        clearBtn.addEventListener('click', () => savePlan(null));
+    }
 }
 
 function buildRateFormHTML(item) {
@@ -485,11 +575,14 @@ function wireRateForm(item) {
 
             document.getElementById('modalBody').innerHTML = buildModalBodyHTML(data.item);
             wireRateForm(data.item);
+            wirePlanForm(data.item);
             document.getElementById('rateStatus').textContent = 'Saved!';
+            showToast('Rating saved!');
             renderAllCategories();
         } catch (e) {
             status.textContent = e.message || 'Something went wrong.';
             status.classList.add('rate-error');
+            showToast(e.message || 'Something went wrong.', true);
             submitBtn.disabled = false;
             submitBtn.textContent = 'Save rating';
         }
@@ -505,6 +598,7 @@ function openDetail(id) {
     document.getElementById('modalPoster').alt = item.title;
     document.getElementById('modalBody').innerHTML = buildModalBodyHTML(item);
     wireRateForm(item);
+    wirePlanForm(item);
     const overlay = document.getElementById('modalOverlay');
     overlay.classList.add('active');
     document.body.style.overflow = 'hidden';

@@ -37,6 +37,9 @@ export default {
         if (pathname === '/api/rate') {
             return handleRate(request, env);
         }
+        if (pathname === '/api/plan') {
+            return handlePlan(request, env);
+        }
         if (pathname.startsWith('/api/')) {
             return json({ error: 'Not found' }, 404);
         }
@@ -148,5 +151,48 @@ async function handleRate(request, env) {
     } catch (error) {
         console.error('Rate Error:', error);
         return json({ ok: false, error: 'Server error while saving rating.' }, 500);
+    }
+}
+
+async function handlePlan(request, env) {
+    if (request.method !== 'POST') {
+        return json({ error: 'Method not allowed' }, 405);
+    }
+
+    try {
+        const { id, plannedDate } = await request.json();
+
+        if (!id) {
+            return json({ ok: false, error: 'Invalid plan data.' }, 400);
+        }
+
+        // plannedDate must be either null/empty (clear it) or a valid YYYY-MM-DD string.
+        let normalizedDate = null;
+        if (plannedDate) {
+            const isValidFormat = /^\d{4}-\d{2}-\d{2}$/.test(plannedDate);
+            if (!isValidFormat || Number.isNaN(new Date(`${plannedDate}T00:00:00`).getTime())) {
+                return json({ ok: false, error: 'Invalid date.' }, 400);
+            }
+            normalizedDate = plannedDate;
+        }
+
+        const raw = await env.LIBRARY_KV.get(KV_KEY);
+        const items = raw ? JSON.parse(raw) : null;
+        if (!items || !Array.isArray(items)) {
+            return json({ ok: false, error: 'Library not found in database.' }, 404);
+        }
+
+        const itemIndex = items.findIndex((i) => i.id === Number(id));
+        if (itemIndex === -1) {
+            return json({ ok: false, error: 'Item not found.' }, 404);
+        }
+
+        items[itemIndex].plannedDate = normalizedDate;
+        await env.LIBRARY_KV.put(KV_KEY, JSON.stringify(items));
+
+        return json({ ok: true, item: items[itemIndex] });
+    } catch (error) {
+        console.error('Plan Error:', error);
+        return json({ ok: false, error: 'Server error while saving planned date.' }, 500);
     }
 }
