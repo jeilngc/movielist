@@ -112,7 +112,7 @@ const seedItems = [
     {
         id: 15, title: 'The Menu', type: 'movie', category: 'Thriller', year: 2022, duration: '1h 47m',
         poster: 'https://m.media-amazon.com/images/M/MV5BN2Q0YWE1MjktODJlMi00NTRiLWI2ZTctZTAxNjkyODVjM2EyXkEyXkFqcGc@._V1_QL75_UX380_CR0,4,380,562_.jpg',
-        banner: 'https://m.media-amazon.com/images/M/MV5BNzVkMTM0NDQtZjE4MC00Njg2LWJmNmMtYzBjMjA4OTA0YjZlXkEyXkFqcGc@._V1_QL75_UX296_.jpg',
+        banner: 'https://m.media-amazon.com/images/M/MV5BZjk5OTk3YjMtNTczMy00ZDI0LTg3OGMtNjJjMzU1YzdmZDQ1XkEyXkFqcGc@._V1_QL75_UX328_.jpg',
         description: 'A young couple travels to a remote island to eat at an exclusive restaurant where the chef has prepared a lavish menu, with some shocking surprises.',
         plannedDate: null,
         watched: { may: { rating: 4.5, comment: 'The story is different from other movie watched so far 😆' }, jay: { rating: 4.5, comment: 'That is a real cheeseburger' } }
