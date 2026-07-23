@@ -416,10 +416,12 @@ function buildModalBodyHTML(item) {
         plannedDateHtml = buildPlanFormHTML(item);
     }
     return '' +
-        '<h2 class="modal-title" id="modalTitle">' + escapeHtml(item.title) + '</h2>' +
         '<div class="modal-meta">' +
         '<span class="modal-stars">' + ratingToStars(avg) + '</span>' +
-        '<span>' + item.year + '</span><span>' + escapeHtml(item.duration) + '</span><span>' + typeLabel + '</span>' +
+        '<span class="modal-chip">' + item.year + '</span>' +
+        '<span class="modal-chip">' + typeLabel + '</span>' +
+        '<span class="modal-chip">' + escapeHtml(item.category) + '</span>' +
+        '<span class="modal-chip">' + escapeHtml(item.duration) + '</span>' +
         '</div>' +
         '<p class="modal-description">' + escapeHtml(item.description) + '</p>' +
         '<div id="syncMeterSlot">' + sync + '</div>' +
@@ -594,6 +596,7 @@ function openDetail(id) {
     lastFocusedElement = document.activeElement;
     document.getElementById('modalPoster').src = item.banner || item.poster || PLACEHOLDER_BANNER;
     document.getElementById('modalPoster').alt = item.title;
+    document.getElementById('modalTitle').textContent = item.title;
     document.getElementById('modalBody').innerHTML = buildModalBodyHTML(item);
     wireRateForm(item);
     wirePlanForm(item);
