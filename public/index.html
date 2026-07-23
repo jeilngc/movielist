@@ -72,10 +72,15 @@
     <div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
         <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" onclick="event.stopPropagation()">
             <button class="modal-close" onclick="closeModal()" aria-label="Close">&#10005;</button>
-            <img class="modal-poster" id="modalPoster" src="" alt="" loading="lazy" onerror="this.onerror=null;this.src=PLACEHOLDER_BANNER;">
+            <div class="modal-hero">
+                <img class="modal-poster" id="modalPoster" src="" alt="" loading="lazy" onerror="this.onerror=null;this.src=PLACEHOLDER_BANNER;">
+                <div class="modal-hero-gradient"></div>
+                <h2 class="modal-hero-title" id="modalTitle"></h2>
+            </div>
             <div class="modal-body" id="modalBody"></div>
         </div>
     </div>
+
 
     <div class="modal-overlay" id="surpriseOverlay" onclick="closeSurprise(event)">
         <div class="surprise-box" onclick="event.stopPropagation()">
