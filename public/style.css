@@ -651,10 +651,9 @@ body {
     }
 }
 .modal-close {
-    position: sticky;
-    top: 12px;
-    float: right;
-    margin-right: 12px;
+    position: absolute;
+    top: 14px;
+    right: 14px;
     width: 34px;
     height: 34px;
     border-radius: 50%;
@@ -663,7 +662,7 @@ body {
     color: var(--paper);
     font-size: 1.1rem;
     cursor: pointer;
-    z-index: 10;
+    z-index: 20;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -679,16 +678,46 @@ body {
     outline: 2px solid var(--marquee);
     outline-offset: 2px;
 }
+.modal-hero {
+    position: relative;
+    width: 100%;
+    border-radius: 14px 14px 0 0;
+    overflow: hidden;
+}
 .modal-poster {
     width: 100%;
-    height: 240px;
-    object-fit: contain;
-    border-radius: 14px 14px 0 0;
+    height: 320px;
+    object-fit: cover;
     background: var(--ink-raised-2);
     display: block;
 }
+.modal-hero-gradient {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        to top,
+        var(--ink-raised) 0%,
+        rgba(30, 26, 36, 0.75) 34%,
+        rgba(30, 26, 36, 0.15) 62%,
+        rgba(30, 26, 36, 0) 85%
+    );
+    pointer-events: none;
+}
+.modal-hero-title {
+    position: absolute;
+    left: 24px;
+    right: 24px;
+    bottom: 18px;
+    font-family: var(--font-display);
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--paper);
+    text-shadow: 0 2px 14px rgba(0, 0, 0, 0.6);
+    margin: 0;
+}
 .modal-body {
-    padding: 22px 24px 28px;
+    padding: 14px 24px 28px;
 }
 .modal-title {
     font-family: var(--font-display);
@@ -710,6 +739,15 @@ body {
     color: var(--star);
     font-size: 1.15rem;
     letter-spacing: 1px;
+}
+.modal-chip {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 6px;
+    padding: 3px 9px;
+    font-size: 0.76rem;
+    font-weight: 500;
+    color: #dcd5d0;
 }
 .modal-description {
     color: #cdc5c0;
@@ -1206,22 +1244,27 @@ body {
             opacity: 1;
         }
     }
-    .modal-poster {
-        height: 180px;
+    .modal-hero {
         border-radius: 18px 18px 0 0;
+    }
+    .modal-poster {
+        height: 200px;
+    }
+    .modal-hero-title {
+        font-size: 1.4rem;
+        left: 16px;
+        right: 16px;
+        bottom: 14px;
     }
     .modal-close {
         top: 8px;
-        margin-right: 8px;
+        right: 8px;
         width: 30px;
         height: 30px;
         font-size: 1rem;
     }
     .modal-body {
-        padding: 18px 16px 24px;
-    }
-    .modal-title {
-        font-size: 1.35rem;
+        padding: 14px 16px 24px;
     }
     .modal-meta {
         font-size: 0.75rem;
@@ -1278,10 +1321,11 @@ body {
         font-size: 0.66rem;
     }
     .modal-poster {
-        height: 150px;
+        height: 160px;
     }
-    .modal-title {
-        font-size: 1.18rem;
+    .modal-hero-title {
+        font-size: 1.2rem;
+        bottom: 12px;
     }
 }
 
@@ -1291,7 +1335,7 @@ body {
         min-height: 300px;
     }
     .modal-poster {
-        height: 140px;
+        height: 150px;
     }
     .modal {
         max-height: 95vh;
