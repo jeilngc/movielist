@@ -155,6 +155,14 @@ const seedItems = [
         description: 'An elite girls school resides next to a boys school for delinquents. One day, two students from each school, Kaoruko and Rintaro, meet and develop a connection.',
         plannedDate: null,
         watched: null
+    },
+    {
+        id: 20, title: 'The Watchers', type: 'movie', category: 'Thriller', year: 2024, duration: '1h 42m',
+        poster: 'https://m.media-amazon.com/images/M/MV5BN2I3MjIzYzMtNDkxNS00ZDIzLWEzZjktNDJlZDZlOGZlMTMxXkEyXkFqcGc@._V1_QL75_UX380_CR0,0,380,562_.jpg',
+        banner: 'https://m.media-amazon.com/images/M/MV5BNmMxMTZjZGMtYjJmNC00YjEwLTliNGUtODg3YzdhYmU4OGExXkEyXkFqcGdeQWRvb2xpbmhk._V1_SY720_QL75_.jpg',
+        description: 'An elite girls school resides next to a boys school for delinquents. One day, two students from each school, Kaoruko and Rintaro, meet and develop a connection.',
+        plannedDate: null,
+        watched: null
     }
 ];
 
