@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "may-and-jay-tracker",
+  "name": "movielist",
   "main": "src/index.js",
   "compatibility_date": "2026-01-01",
   "assets": {
