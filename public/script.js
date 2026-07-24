@@ -190,7 +190,22 @@ function startHeroCycling() {
     }, 10000);
 }
 
+async function syncAuthedPerson() {
+    try {
+        const res = await fetch('/api/me');
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.person === 'may' || data.person === 'jay') {
+            currentRatingPerson = data.person;
+            localStorage.setItem('mj_person', currentRatingPerson);
+        }
+    } catch (e) {
+        // Non-fatal — fall back to whatever's in localStorage already.
+    }
+}
+
 async function init() {
+    await syncAuthedPerson();
     await loadItems();
     ensureAllCategories();
     refreshHero();
@@ -201,6 +216,11 @@ async function init() {
         if (currentHeroItemId !== null) openDetail(currentHeroItemId);
     });
     document.getElementById('heroSurpriseBtn').addEventListener('click', surprisePick);
+    document.getElementById('addSubmitBtn').addEventListener('click', submitAddForm);
+    document.getElementById('addForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        submitAddForm();
+    });
 
     window.addEventListener('scroll', () => {
         document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 40);
@@ -507,7 +527,7 @@ function buildRateFormHTML(item) {
     return '' +
         '<div class="rate-form" id="rateForm">' +
         '<div class="rate-form-head">Rate it <span class="rating-as">rating as <strong>' + personLabel + '</strong></span>' +
-        '<button type="button" class="switch-person-link" id="switchPersonLink" title="Rate as the other person">Switch</button>' +
+        '<button type="button" class="switch-person-link" id="switchPersonLink" title="Log out and sign in with the other password">Not you?</button>' +
         '</div>' +
         '<div class="star-row">' +
         '<input type="range" id="rateRange" min="0" max="5" step="0.5" value="' + startRating + '">' +
@@ -537,11 +557,7 @@ function wireRateForm(item) {
 
     if (switchLink) {
         switchLink.addEventListener('click', () => {
-            currentRatingPerson = currentRatingPerson === 'may' ? 'jay' : 'may';
-            localStorage.setItem('mj_person', currentRatingPerson);
-            document.getElementById('modalBody').innerHTML = buildModalBodyHTML(item);
-            wireRateForm(item);
-            wirePlanForm(item);
+            doLogout();
         });
     }
 
@@ -614,6 +630,79 @@ function closeModal(e) {
     currentModalItem = null;
     if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') lastFocusedElement.focus();
     lastFocusedElement = null;
+}
+
+function openAddModal() {
+    lastFocusedElement = document.activeElement;
+    document.getElementById('addForm').reset();
+    document.getElementById('addStatus').textContent = '';
+    document.getElementById('addStatus').classList.remove('rate-error');
+    document.getElementById('addYearInput').value = new Date().getFullYear();
+    document.getElementById('addOverlay').classList.add('active');
+    document.body.style.overflow = 'hidden';
+    document.getElementById('addTitleInput').focus();
+}
+
+function closeAddModal(e) {
+    if (e && e.target !== document.getElementById('addOverlay')) return;
+    document.getElementById('addOverlay').classList.remove('active');
+    document.body.style.overflow = '';
+    if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') lastFocusedElement.focus();
+    lastFocusedElement = null;
+}
+
+async function submitAddForm() {
+    const status = document.getElementById('addStatus');
+    const submitBtn = document.getElementById('addSubmitBtn');
+    status.textContent = '';
+    status.classList.remove('rate-error');
+
+    const title = document.getElementById('addTitleInput').value.trim();
+    const type = document.getElementById('addTypeInput').value;
+    const year = Number(document.getElementById('addYearInput').value);
+    const category = document.getElementById('addCategoryInput').value.trim();
+    const duration = document.getElementById('addDurationInput').value.trim();
+    const poster = document.getElementById('addPosterInput').value.trim();
+    const banner = document.getElementById('addBannerInput').value.trim();
+    const description = document.getElementById('addDescriptionInput').value.trim();
+
+    if (!title || !category || !poster || !year) {
+        status.textContent = 'Please fill in all required fields (marked *).';
+        status.classList.add('rate-error');
+        return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Adding…';
+
+    try {
+        const nextId = items.reduce((max, i) => Math.max(max, i.id), 0) + 1;
+        const newItem = {
+            id: nextId,
+            title,
+            type,
+            category,
+            year,
+            duration: duration || '',
+            poster,
+            banner: banner || poster,
+            description: description || '',
+            plannedDate: null,
+            watched: null
+        };
+        items.push(newItem);
+        await persistItems();
+        renderAllCategories();
+        closeAddModal();
+        showToast('"' + title + '" added to the library!');
+    } catch (e) {
+        status.textContent = 'Something went wrong saving this title.';
+        status.classList.add('rate-error');
+        showToast('Could not add title.', true);
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Add to library';
+    }
 }
 
 function surprisePick() {

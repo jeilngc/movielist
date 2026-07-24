@@ -1,5 +1,5 @@
 // src/index.js
-import { createToken, authCookie, clearCookie, isAuthenticated, json } from './auth.js';
+import { createToken, authCookie, clearCookie, getAuthedPerson, json } from './auth.js';
 
 const KV_KEY = 'library:items';
 const PUBLIC_PATHS = new Set(['/login.html', '/api/login', '/api/logout']);
@@ -18,9 +18,9 @@ export default {
         }
 
         // --- Everything else requires a valid session cookie ---
-        const authed = await isAuthenticated(request, env.COOKIE_SECRET);
+        const person = await getAuthedPerson(request, env.COOKIE_SECRET);
 
-        if (!authed) {
+        if (!person) {
             if (pathname.startsWith('/api/')) {
                 return json({ error: 'Unauthorized' }, 401);
             }
@@ -30,12 +30,16 @@ export default {
             return Response.redirect(`${url.origin}/login.html`, 302);
         }
 
-        // Authenticated from here on.
+        // Authenticated from here on. `person` ('may' or 'jay') comes straight
+        // from the verified cookie — never trust a client-supplied person field.
+        if (pathname === '/api/me') {
+            return json({ person });
+        }
         if (pathname === '/api/items') {
             return handleItems(request, env);
         }
         if (pathname === '/api/rate') {
-            return handleRate(request, env);
+            return handleRate(request, env, person);
         }
         if (pathname === '/api/plan') {
             return handlePlan(request, env);
@@ -64,15 +68,20 @@ async function handleLogin(request, env) {
     }
 
     const { password } = body;
-    const sitePassword = env.SITE_PASSWORD;
+    const mayPassword = env.SITE_PASSWORD_MAY;
+    const jayPassword = env.SITE_PASSWORD_JAY;
 
-    if (!sitePassword) {
-        return json({ error: 'SITE_PASSWORD is not configured on the server.' }, 500);
+    if (!mayPassword || !jayPassword) {
+        return json({ error: 'SITE_PASSWORD_MAY / SITE_PASSWORD_JAY are not configured on the server.' }, 500);
     }
 
-    if (password === sitePassword) {
-        const token = await createToken(env.COOKIE_SECRET);
-        return json({ ok: true }, 200, { 'Set-Cookie': authCookie(token) });
+    let matchedPerson = null;
+    if (password === mayPassword) matchedPerson = 'may';
+    else if (password === jayPassword) matchedPerson = 'jay';
+
+    if (matchedPerson) {
+        const token = await createToken(env.COOKIE_SECRET, matchedPerson);
+        return json({ ok: true, person: matchedPerson }, 200, { 'Set-Cookie': authCookie(token) });
     }
 
     return json({ ok: false, error: 'Wrong password.' }, 401);
@@ -111,15 +120,19 @@ async function handleItems(request, env) {
     return json({ error: 'Method not allowed' }, 405);
 }
 
-async function handleRate(request, env) {
+async function handleRate(request, env, authedPerson) {
     if (request.method !== 'POST') {
         return json({ error: 'Method not allowed' }, 405);
     }
 
     try {
-        const { id, person, rating, comment } = await request.json();
+        const { id, rating, comment } = await request.json();
+        // `person` is always the authenticated identity from the cookie now —
+        // ignores any person field the client might send, so May can never
+        // accidentally (or deliberately) save a rating as Jay or vice versa.
+        const person = authedPerson;
 
-        if (!id || !person || (person !== 'may' && person !== 'jay')) {
+        if (!id) {
             return json({ ok: false, error: 'Invalid rating data.' }, 400);
         }
 

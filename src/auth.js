@@ -17,15 +17,32 @@ async function hmacHex(secret, message) {
         .join('');
 }
 
-export async function createToken(secret) {
-    const hash = await hmacHex(secret || DEV_FALLBACK_SECRET, 'authorized_user');
-    return `auth_${hash}`;
+// Token now encodes WHICH person is logged in, signed so it can't be forged
+// or edited client-side (e.g. changing "may" to "jay" in the cookie).
+export async function createToken(secret, person) {
+    const hash = await hmacHex(secret || DEV_FALLBACK_SECRET, `authorized_user:${person}`);
+    return `${person}.${hash}`;
 }
 
-export async function isAuthenticated(request, secret) {
+function parseCookie(request) {
     const cookieHeader = request.headers.get('Cookie') || '';
-    const expectedToken = await createToken(secret);
-    return cookieHeader.includes(`${COOKIE_NAME}=${expectedToken}`);
+    const match = cookieHeader.match(new RegExp(`${COOKIE_NAME}=([^;]+)`));
+    return match ? match[1] : null;
+}
+
+// Returns 'may' | 'jay' if the cookie is valid, or null if missing/invalid/forged.
+export async function getAuthedPerson(request, secret) {
+    const raw = parseCookie(request);
+    if (!raw) return null;
+
+    const dotIndex = raw.indexOf('.');
+    if (dotIndex === -1) return null;
+
+    const person = raw.slice(0, dotIndex);
+    if (person !== 'may' && person !== 'jay') return null;
+
+    const expected = await createToken(secret, person);
+    return raw === expected ? person : null;
 }
 
 export function authCookie(token) {

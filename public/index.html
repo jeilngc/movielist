@@ -31,6 +31,7 @@
                 <span class="search-icon" aria-hidden="true">&#128269;</span>
                 <input type="text" id="searchInput" placeholder="Search..." oninput="handleSearch()" aria-label="Search titles">
             </div>
+                        <button class="add-title-btn" id="addTitleBtn" onclick="openAddModal()" aria-label="Add a title">+ Add</button>
             <div class="avatar-mark" aria-label="May and Jay"><span class="a-may"></span><span class="a-jay"></span></div>
             <a class="logout-link" role="button" tabindex="0" onclick="doLogout()" aria-label="Log out">Log out</a>
             <button class="hamburger" id="hamburger" onclick="toggleMobileMenu()" aria-label="Menu">
@@ -78,6 +79,59 @@
                 <h2 class="modal-hero-title" id="modalTitle"></h2>
             </div>
             <div class="modal-body" id="modalBody"></div>
+        </div>
+    </div>
+
+
+    <div class="modal-overlay" id="addOverlay" onclick="closeAddModal(event)">
+        <div class="modal add-modal" id="addModal" role="dialog" aria-modal="true" aria-labelledby="addModalTitle" onclick="event.stopPropagation()">
+            <button class="modal-close" onclick="closeAddModal()" aria-label="Close">&#10005;</button>
+            <div class="modal-body add-modal-body">
+                <h2 class="modal-title" id="addModalTitle">Add a title</h2>
+                <form id="addForm">
+                    <label class="add-field">
+                        <span>Title <em>*</em></span>
+                        <input type="text" id="addTitleInput" required maxlength="200">
+                    </label>
+                    <div class="add-field-row">
+                        <label class="add-field">
+                            <span>Type <em>*</em></span>
+                            <select id="addTypeInput">
+                                <option value="movie">Movie</option>
+                                <option value="series">Series</option>
+                            </select>
+                        </label>
+                        <label class="add-field">
+                            <span>Year <em>*</em></span>
+                            <input type="number" id="addYearInput" min="1900" max="2100" required>
+                        </label>
+                    </div>
+                    <div class="add-field-row">
+                        <label class="add-field">
+                            <span>Category <em>*</em></span>
+                            <input type="text" id="addCategoryInput" placeholder="e.g. Sci-Fi, Anime, Romance" required maxlength="40">
+                        </label>
+                        <label class="add-field">
+                            <span>Duration</span>
+                            <input type="text" id="addDurationInput" placeholder="e.g. 2h 10m or 24m">
+                        </label>
+                    </div>
+                    <label class="add-field">
+                        <span>Poster image URL <em>*</em></span>
+                        <input type="url" id="addPosterInput" placeholder="https://..." required>
+                    </label>
+                    <label class="add-field">
+                        <span>Banner image URL</span>
+                        <input type="url" id="addBannerInput" placeholder="https://... (falls back to poster if left blank)">
+                    </label>
+                    <label class="add-field">
+                        <span>Description</span>
+                        <textarea id="addDescriptionInput" maxlength="600" rows="3"></textarea>
+                    </label>
+                    <button type="button" class="btn btn-primary add-submit-btn" id="addSubmitBtn">Add to library</button>
+                    <div class="rate-status" id="addStatus"></div>
+                </form>
+            </div>
         </div>
     </div>
 
