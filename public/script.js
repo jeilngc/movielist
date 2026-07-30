@@ -139,7 +139,8 @@ function refreshHero(forcedItem) {
         document.getElementById('heroYear').textContent = '';
         document.getElementById('heroDuration').textContent = '';
         document.getElementById('heroDescription').textContent = 'Add your first title to get started.';
-        document.getElementById('hero').style.backgroundImage = '';
+        document.getElementById('heroBackdrop').style.backgroundImage = '';
+        document.getElementById('heroImage').src = '';
         return;
     }
     currentHeroItemId = item.id;
@@ -160,10 +161,9 @@ function refreshHero(forcedItem) {
     document.getElementById('heroDuration').textContent = item.duration;
     document.getElementById('heroDescription').textContent = item.description;
     const banner = item.banner || item.poster || '';
-    document.getElementById('hero').style.backgroundImage =
-        "linear-gradient(180deg, rgba(20,17,26,0) 0%, rgba(20,17,26,0.35) 38%, rgba(20,17,26,0.86) 72%, #14111a 100%), " +
-        "linear-gradient(90deg, rgba(20,17,26,0.7) 0%, rgba(20,17,26,0.2) 50%, rgba(20,17,26,0.05) 100%), " +
-        "url('" + banner.replace(/'/g, "%27") + "')";
+    document.getElementById('heroBackdrop').style.backgroundImage = "url('" + banner.replace(/'/g, "%27") + "')";
+    document.getElementById('heroImage').src = banner;
+    document.getElementById('heroImage').alt = item.title;
     const heroContent = document.getElementById('heroContent');
     heroContent.style.animation = 'none';
     void heroContent.offsetHeight;
@@ -610,8 +610,10 @@ function openDetail(id) {
     if (!item) return;
     currentModalItem = item;
     lastFocusedElement = document.activeElement;
-    document.getElementById('modalPoster').src = item.banner || item.poster || PLACEHOLDER_BANNER;
+    const heroSrc = item.banner || item.poster || PLACEHOLDER_BANNER;
+    document.getElementById('modalPoster').src = heroSrc;
     document.getElementById('modalPoster').alt = item.title;
+    document.getElementById('modalHeroBackdrop').style.backgroundImage = "url('" + heroSrc.replace(/'/g, "%27") + "')";
     document.getElementById('modalTitle').textContent = item.title;
     document.getElementById('modalBody').innerHTML = buildModalBodyHTML(item);
     wireRateForm(item);
