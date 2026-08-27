@@ -38,6 +38,9 @@ export default {
         if (pathname === '/api/items') {
             return handleItems(request, env);
         }
+        if (pathname === '/api/items/add') {
+            return handleAddItem(request, env);
+        }
         if (pathname === '/api/rate') {
             return handleRate(request, env, person);
         }
@@ -118,6 +121,82 @@ async function handleItems(request, env) {
     }
 
     return json({ error: 'Method not allowed' }, 405);
+}
+
+async function handleAddItem(request, env) {
+    if (request.method !== 'POST') {
+        return json({ error: 'Method not allowed' }, 405);
+    }
+
+    try {
+        const body = await request.json();
+
+        const title = String(body.title || '').trim().slice(0, 200);
+        const type = body.type === 'series' ? 'series' : 'movie';
+        const category = String(body.category || '').trim().slice(0, 40);
+        const year = Number(body.year);
+        const duration = String(body.duration || '').trim().slice(0, 40);
+        const posterRaw = String(body.poster || '').trim();
+        const bannerRaw = String(body.banner || '').trim();
+        const description = String(body.description || '').trim().slice(0, 600);
+
+        if (!title || !category || !posterRaw) {
+            return json({ ok: false, error: 'Title, category and poster are required.' }, 400);
+        }
+        if (!Number.isFinite(year) || year < 1900 || year > 2100) {
+            return json({ ok: false, error: 'Please enter a valid year.' }, 400);
+        }
+
+        let poster;
+        try {
+            poster = new URL(posterRaw).toString();
+        } catch (e) {
+            return json({ ok: false, error: 'Poster must be a valid URL.' }, 400);
+        }
+
+        let banner = poster;
+        if (bannerRaw) {
+            try {
+                banner = new URL(bannerRaw).toString();
+            } catch (e) {
+                return json({ ok: false, error: 'Banner must be a valid URL.' }, 400);
+            }
+        }
+
+        // Read-append-write happens entirely within this single request, right
+        // before the write, instead of the client holding the array in memory
+        // across however long the "Add a title" modal was open. That shrinks
+        // (though, without a Durable Object, doesn't fully eliminate) the
+        // window in which two simultaneous adds could clobber each other.
+        const raw = await env.LIBRARY_KV.get(KV_KEY);
+        const items = raw ? JSON.parse(raw) : [];
+        if (!Array.isArray(items)) {
+            return json({ ok: false, error: 'Library data is corrupted.' }, 500);
+        }
+
+        const nextId = items.reduce((max, i) => Math.max(max, Number(i.id) || 0), 0) + 1;
+        const newItem = {
+            id: nextId,
+            title,
+            type,
+            category,
+            year,
+            duration,
+            poster,
+            banner,
+            description,
+            plannedDate: null,
+            watched: null
+        };
+
+        items.push(newItem);
+        await env.LIBRARY_KV.put(KV_KEY, JSON.stringify(items));
+
+        return json({ ok: true, item: newItem });
+    } catch (error) {
+        console.error('Add Item Error:', error);
+        return json({ ok: false, error: 'Server error while adding item.' }, 500);
+    }
 }
 
 async function handleRate(request, env, authedPerson) {

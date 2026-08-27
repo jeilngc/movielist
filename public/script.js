@@ -69,26 +69,63 @@ function getDoubleFiveItems() {
     );
 }
 
+// Returns 'ok', 'redirect' (already sent to /login.html), or 'error'.
+// IMPORTANT: we only ever seed placeholder data when the server explicitly
+// tells us the library is empty (200 OK with a null body). A network error
+// or non-2xx status is NOT proof the library is empty — it's proof we
+// couldn't reach it — so those cases must NOT trigger a reseed, or a
+// transient outage could silently overwrite the real shared library.
 async function loadItems() {
+    let res;
     try {
-        const res = await fetch('/api/items');
-        if (res.status === 401) {
-            window.location.href = '/login.html';
-            return;
-        }
-        if (res.ok) {
-            const data = await res.json();
-            if (data) {
-                items = data;
-                return;
-            }
-        }
+        res = await fetch('/api/items');
     } catch (e) {
-        console.warn('Could not reach /api/items, falling back to seed data.', e);
+        console.warn('Could not reach /api/items.', e);
+        return 'error';
     }
-    // Nothing saved yet (first run) — seed it once so both of you share the same library.
+
+    if (res.status === 401) {
+        window.location.href = '/login.html';
+        return 'redirect';
+    }
+
+    if (!res.ok) {
+        console.error('Failed to load items, status:', res.status);
+        return 'error';
+    }
+
+    let data;
+    try {
+        data = await res.json();
+    } catch (e) {
+        console.error('Malformed /api/items response.', e);
+        return 'error';
+    }
+
+    if (data) {
+        items = data;
+        return 'ok';
+    }
+
+    // Server confirmed: nothing saved yet. Safe to seed once.
     items = seedItems.map(i => Object.assign({}, i));
     await persistItems();
+    return 'ok';
+}
+
+function showLoadError() {
+    document.getElementById('heroTitle').textContent = 'Something went wrong';
+    document.getElementById('heroDescription').textContent = '';
+    document.getElementById('heroEyebrow').textContent = '';
+    document.getElementById('heroStars').textContent = '';
+    document.getElementById('heroYear').textContent = '';
+    document.getElementById('heroDuration').textContent = '';
+    document.getElementById('mainContent').innerHTML =
+        '<div class="empty-state">' +
+        '<h2>Couldn\'t load your library</h2>' +
+        '<p>We hit a problem reaching the server. Your saved titles are safe — this only means we couldn\'t fetch them just now.</p>' +
+        '<button class="btn btn-primary" onclick="location.reload()">Try again</button>' +
+        '</div>';
 }
 
 async function persistItems() {
@@ -206,7 +243,12 @@ async function syncAuthedPerson() {
 
 async function init() {
     await syncAuthedPerson();
-    await loadItems();
+    const loadStatus = await loadItems();
+    if (loadStatus === 'redirect') return;
+    if (loadStatus === 'error') {
+        showLoadError();
+        return;
+    }
     ensureAllCategories();
     refreshHero();
     startHeroCycling();
@@ -678,27 +720,21 @@ async function submitAddForm() {
     submitBtn.textContent = 'Adding…';
 
     try {
-        const nextId = items.reduce((max, i) => Math.max(max, i.id), 0) + 1;
-        const newItem = {
-            id: nextId,
-            title,
-            type,
-            category,
-            year,
-            duration: duration || '',
-            poster,
-            banner: banner || poster,
-            description: description || '',
-            plannedDate: null,
-            watched: null
-        };
-        items.push(newItem);
-        await persistItems();
+        const res = await fetch('/api/items/add', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title, type, category, year, duration, poster, banner, description })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) {
+            throw new Error(data.error || 'Something went wrong saving this title.');
+        }
+        items.push(data.item);
         renderAllCategories();
         closeAddModal();
         showToast('"' + title + '" added to the library!');
     } catch (e) {
-        status.textContent = 'Something went wrong saving this title.';
+        status.textContent = e.message || 'Something went wrong saving this title.';
         status.classList.add('rate-error');
         showToast('Could not add title.', true);
     } finally {
