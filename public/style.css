@@ -944,6 +944,136 @@ body {
     flex: 1;
     min-width: 140px;
 }
+/* --- Recap --- */
+.recap-header {
+    padding: 36px 32px 8px;
+}
+.recap-eyebrow {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 2.2px;
+    text-transform: uppercase;
+    color: var(--marquee);
+    margin-bottom: 10px;
+}
+.recap-title {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    font-weight: 600;
+    letter-spacing: -0.4px;
+    margin-bottom: 4px;
+}
+.recap-section {
+    padding: 0 32px;
+    margin-bottom: 34px;
+}
+.recap-stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    padding: 10px 32px 0;
+    margin-bottom: 34px;
+}
+.recap-stat {
+    background: var(--ink-raised);
+    border-radius: 10px;
+    padding: 18px 14px;
+    text-align: center;
+}
+.recap-stat-value {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    font-weight: 600;
+    color: var(--paper);
+    line-height: 1;
+    margin-bottom: 6px;
+}
+.recap-stat-label {
+    font-size: 0.76rem;
+    color: var(--paper-dim);
+}
+.recap-sync-row {
+    background: var(--ink-raised);
+    border-radius: 12px;
+    padding: 20px 22px;
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    flex-wrap: wrap;
+}
+.recap-sync-value {
+    font-family: var(--font-display);
+    font-size: 2.6rem;
+    font-weight: 600;
+    color: var(--marquee);
+    line-height: 1;
+}
+.recap-sync-side {
+    flex: 1;
+    min-width: 180px;
+}
+.recap-sync-caption {
+    font-size: 0.95rem;
+    color: var(--paper);
+    margin-bottom: 4px;
+}
+.recap-sync-sub {
+    font-size: 0.8rem;
+    color: var(--paper-dim);
+}
+.recap-may {
+    color: var(--may);
+}
+.recap-jay {
+    color: var(--jay);
+}
+.recap-disagreement {
+    background: var(--ink-raised);
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    gap: 16px;
+}
+.recap-disagreement-poster {
+    width: 90px;
+    height: 135px;
+    object-fit: cover;
+    border-radius: 8px;
+    flex: 0 0 auto;
+}
+.recap-disagreement-body {
+    flex: 1;
+    min-width: 0;
+}
+.recap-disagreement-title {
+    font-family: var(--font-display);
+    font-size: 1.15rem;
+    font-weight: 600;
+    margin-bottom: 12px;
+    cursor: pointer;
+}
+.recap-disagreement-body .existing-ratings {
+    margin-bottom: 0;
+}
+.recap-genre {
+    background: var(--ink-raised);
+    border-radius: 12px;
+    padding: 20px 22px;
+    font-family: var(--font-display);
+    font-size: 1.4rem;
+    font-weight: 600;
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+.recap-genre-count {
+    font-family: var(--font-body);
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--paper-dim);
+}
+
 .existing-ratings .note-card p {
     font-size: 0.82rem;
     color: #cdc5c0;
@@ -1313,6 +1443,34 @@ body {
     .category-title {
         font-size: 1.08rem;
     }
+    .recap-header {
+        padding: 26px 14px 6px;
+    }
+    .recap-title {
+        font-size: 1.55rem;
+    }
+    .recap-section {
+        padding: 0 14px;
+        margin-bottom: 24px;
+    }
+    .recap-stats-row {
+        grid-template-columns: repeat(2, 1fr);
+        padding: 6px 14px 0;
+        margin-bottom: 24px;
+    }
+    .recap-stat-value {
+        font-size: 1.6rem;
+    }
+    .recap-sync-value {
+        font-size: 2.1rem;
+    }
+    .recap-disagreement {
+        flex-direction: column;
+    }
+    .recap-disagreement-poster {
+        width: 100%;
+        height: 180px;
+    }
     .category-row {
         gap: 9px;
         padding: 6px 0 12px;
@@ -1486,4 +1644,4 @@ body {
     .modal {
         max-height: 95vh;
     }
-}
+}

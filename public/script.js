@@ -364,8 +364,114 @@ function renderWatchlistHTML(list) {
     return html || emptyState('Nothing on the watchlist yet', 'Open any title and set a planned date, or add something new.');
 }
 
+function buildRecapStatCard(value, label) {
+    return '<div class="recap-stat"><div class="recap-stat-value">' + value + '</div><div class="recap-stat-label">' + escapeHtml(label) + '</div></div>';
+}
+
+function buildRecapHTML() {
+    const watched = items.filter(i => i.watched);
+    if (!watched.length) {
+        return emptyState('Nothing to recap yet', 'Rate a title together and your recap will start filling in here.');
+    }
+
+    const movies = watched.filter(i => i.type === 'movie').length;
+    const series = watched.filter(i => i.type === 'series').length;
+    const watchlistCount = items.filter(i => !i.watched).length;
+    const mutual = watched.filter(i => i.watched.may && i.watched.jay);
+
+    const mayRated = watched.filter(i => i.watched.may).map(i => i.watched.may.rating);
+    const jayRated = watched.filter(i => i.watched.jay).map(i => i.watched.jay.rating);
+    const avg = arr => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
+    const avgMay = avg(mayRated);
+    const avgJay = avg(jayRated);
+
+    const catCounts = {};
+    watched.forEach(i => { catCounts[i.category] = (catCounts[i.category] || 0) + 1; });
+    const topCategory = Object.keys(catCounts).sort((a, b) => catCounts[b] - catCounts[a])[0];
+
+    const statsRow =
+        '<div class="recap-stats-row">' +
+        buildRecapStatCard(watched.length, watched.length === 1 ? 'title watched' : 'titles watched') +
+        buildRecapStatCard(movies, movies === 1 ? 'movie' : 'movies') +
+        buildRecapStatCard(series, series === 1 ? 'series' : 'series') +
+        buildRecapStatCard(watchlistCount, 'still on the list') +
+        '</div>';
+
+    let syncSection = '';
+    if (mutual.length) {
+        const avgDelta = avg(mutual.map(i => Math.abs(i.watched.may.rating - i.watched.jay.rating)));
+        const syncPct = Math.round((1 - avgDelta / 5) * 100);
+        const critic = avgMay === avgJay ? null : (avgMay < avgJay ? 'May' : 'Jay');
+        syncSection =
+            '<div class="recap-section">' +
+            '<div class="recap-eyebrow">TASTE SYNC</div>' +
+            '<div class="recap-sync-row">' +
+            '<div class="recap-sync-value">' + syncPct + '%</div>' +
+            '<div class="recap-sync-side">' +
+            '<div class="recap-sync-caption">' + deltaCaption(avgDelta) + '</div>' +
+            '<div class="recap-sync-sub">Based on ' + mutual.length + ' title' + (mutual.length === 1 ? '' : 's') + ' you\'ve both rated' +
+            (critic ? ' &middot; <strong class="recap-' + critic.toLowerCase() + '">' + critic + '</strong> tends to rate a little tougher' : '') +
+            '</div></div></div></div>';
+    }
+
+    let disagreementSection = '';
+    if (mutual.length) {
+        const biggest = mutual.slice().sort((a, b) =>
+            Math.abs(b.watched.may.rating - b.watched.jay.rating) - Math.abs(a.watched.may.rating - a.watched.jay.rating)
+        )[0];
+        const delta = Math.abs(biggest.watched.may.rating - biggest.watched.jay.rating);
+        if (delta > 0) {
+            disagreementSection =
+                '<div class="recap-section">' +
+                '<div class="recap-eyebrow">BIGGEST DISAGREEMENT</div>' +
+                '<div class="recap-disagreement">' +
+                '<img class="recap-disagreement-poster" src="' + escapeHtml(biggest.poster || PLACEHOLDER_POSTER) + '" alt="' + escapeHtml(biggest.title) + '" loading="lazy" onerror="this.onerror=null;this.src=PLACEHOLDER_POSTER;">' +
+                '<div class="recap-disagreement-body">' +
+                '<div class="recap-disagreement-title" role="button" tabindex="0" onclick="openDetail(' + biggest.id + ')">' + escapeHtml(biggest.title) + '</div>' +
+                '<div class="existing-ratings">' +
+                '<div class="note-card note-may"><div class="note-card-head">May ★ ' + biggest.watched.may.rating.toFixed(1) + '</div>' + (biggest.watched.may.comment ? '<p>' + escapeHtml(biggest.watched.may.comment) + '</p>' : '') + '</div>' +
+                '<div class="note-card note-jay"><div class="note-card-head">Jay ★ ' + biggest.watched.jay.rating.toFixed(1) + '</div>' + (biggest.watched.jay.comment ? '<p>' + escapeHtml(biggest.watched.jay.comment) + '</p>' : '') + '</div>' +
+                '</div></div></div></div>';
+        }
+    }
+
+    let matchesSection = '';
+    const doubleFives = getDoubleFiveItems();
+    if (doubleFives.length) {
+        matchesSection =
+            '<div class="recap-section">' +
+            '<div class="recap-eyebrow">PERFECT MATCHES &middot; ' + doubleFives.length + '</div>' +
+            '<div class="category-row">' + doubleFives.map(i => createCardHTML(i, false)).join('') + '</div>' +
+            '</div>';
+    }
+
+    let categorySection = '';
+    if (topCategory) {
+        categorySection =
+            '<div class="recap-section">' +
+            '<div class="recap-eyebrow">GO-TO GENRE</div>' +
+            '<div class="recap-genre">' + escapeHtml(topCategory) + '<span class="recap-genre-count">' + catCounts[topCategory] + ' watched</span></div>' +
+            '</div>';
+    }
+
+    return '' +
+        '<div class="recap-header">' +
+        '<div class="recap-eyebrow">MAY &amp; JAY</div>' +
+        '<h2 class="recap-title">The story so far</h2>' +
+        '</div>' +
+        statsRow +
+        syncSection +
+        disagreementSection +
+        matchesSection +
+        categorySection;
+}
+
 function renderAllCategories() {
     const container = document.getElementById('mainContent');
+    if (currentFilter === 'recap') {
+        container.innerHTML = buildRecapHTML();
+        return;
+    }
     if (currentFilter === 'watchlist') {
         container.innerHTML = renderWatchlistHTML(items);
         return;
@@ -395,7 +501,7 @@ function filterContent(filter, linkElement) {
 
 function handleSearch() {
     const query = document.getElementById('searchInput').value.toLowerCase().trim();
-    if (!query) { renderAllCategories(); return; }
+    if (!query || currentFilter === 'recap') { renderAllCategories(); return; }
     let filtered = items.filter(i => i.title.toLowerCase().includes(query));
     if (currentFilter === 'movie' || currentFilter === 'series') filtered = filtered.filter(i => i.type === currentFilter);
     else if (currentFilter === 'alreadyWatched') filtered = filtered.filter(i => i.watched);
@@ -413,13 +519,16 @@ document.addEventListener('click', (e) => {
     }
 });
 
+function deltaCaption(delta) {
+    if (delta === 0) return 'Perfectly in sync 🎯';
+    if (delta <= 0.5) return 'Practically twins 🤝';
+    if (delta <= 1.5) return 'A little different taste 🎬';
+    return 'Totally different wavelengths 📡';
+}
+
 function buildSyncMeterHTML(mayRating, jayRating) {
     const delta = Math.abs(mayRating - jayRating);
-    let caption;
-    if (delta === 0) caption = 'Perfectly in sync 🎯';
-    else if (delta <= 0.5) caption = 'Practically twins 🤝';
-    else if (delta <= 1.5) caption = 'A little different taste 🎬';
-    else caption = 'Totally different wavelengths 📡';
+    const caption = deltaCaption(delta);
     const mayPos = (mayRating / 5 * 100).toFixed(1);
     const jayPos = (jayRating / 5 * 100).toFixed(1);
     return '' +
@@ -827,4 +936,4 @@ async function doLogout() {
     window.location.href = '/login.html';
 }
 
-init();
+init();
