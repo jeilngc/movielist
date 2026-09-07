@@ -927,6 +927,43 @@ document.addEventListener('keydown', e => {
     }
 });
 
+// --- PWA: install prompt + service worker registration ---
+let deferredInstallPrompt = null;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredInstallPrompt = e;
+    const btn = document.getElementById('installBtn');
+    if (btn) btn.hidden = false;
+});
+
+window.addEventListener('appinstalled', () => {
+    deferredInstallPrompt = null;
+    const btn = document.getElementById('installBtn');
+    if (btn) btn.hidden = true;
+});
+
+async function promptInstall() {
+    const btn = document.getElementById('installBtn');
+    if (!deferredInstallPrompt) return;
+    deferredInstallPrompt.prompt();
+    try {
+        await deferredInstallPrompt.userChoice;
+    } catch (e) {
+        // Ignore — some browsers reject this promise if the prompt was dismissed.
+    }
+    deferredInstallPrompt = null;
+    if (btn) btn.hidden = true;
+}
+
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch((e) => {
+            console.warn('Service worker registration failed.', e);
+        });
+    });
+}
+
 async function doLogout() {
     try {
         await fetch('/api/logout', { method: 'POST' });

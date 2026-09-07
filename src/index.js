@@ -2,7 +2,11 @@
 import { createToken, authCookie, clearCookie, getAuthedPerson, json } from './auth.js';
 
 const KV_KEY = 'library:items';
-const PUBLIC_PATHS = new Set(['/login.html', '/api/login', '/api/logout']);
+const PUBLIC_PATHS = new Set(['/login.html', '/api/login', '/api/logout', '/sw.js', '/manifest.json']);
+// The service worker registers (and the manifest/icons get fetched) before
+// anyone has necessarily logged in, so these need to be reachable without
+// a session cookie — same as the login page itself.
+const PUBLIC_PREFIXES = ['/icons/'];
 
 export default {
     async fetch(request, env, ctx) {
@@ -15,6 +19,11 @@ export default {
         }
         if (pathname === '/api/logout') {
             return handleLogout();
+        }
+
+        const isPublicAsset = PUBLIC_PATHS.has(pathname) || PUBLIC_PREFIXES.some((p) => pathname.startsWith(p));
+        if (isPublicAsset && pathname !== '/login.html') {
+            return env.ASSETS.fetch(request);
         }
 
         // --- Everything else requires a valid session cookie ---
@@ -298,4 +307,4 @@ async function handlePlan(request, env) {
         console.error('Plan Error:', error);
         return json({ ok: false, error: 'Server error while saving planned date.' }, 500);
     }
-}
+}

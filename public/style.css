@@ -237,6 +237,26 @@ body {
 .logout-link:hover {
     color: var(--paper);
 }
+.install-btn {
+    font-family: var(--font-body);
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--paper);
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    padding: 7px 14px;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: background 0.15s ease, transform 0.15s ease;
+}
+.install-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+.install-btn:active {
+    transform: scale(0.96);
+}
 .add-title-btn {
     font-family: var(--font-body);
     font-size: 0.8rem;
@@ -260,6 +280,7 @@ body {
 @media (max-width: 640px) {
     .logout-link { display: none; }
     .add-title-btn { padding: 6px 11px; font-size: 0.75rem; }
+    .install-btn { padding: 6px 11px; font-size: 0.75rem; }
 }
 
 .add-modal {
