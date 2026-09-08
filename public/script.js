@@ -1144,8 +1144,11 @@ async function promptInstall() {
 
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js').catch((e) => {
+        navigator.serviceWorker.register('/sw.js', { scope: '/' }).then((reg) => {
+            console.log('Service worker registered:', reg);
+        }).catch((e) => {
             console.warn('Service worker registration failed.', e);
+            try { showToast('Service worker failed to register. Check console for details.', true); } catch (err) { /* ignore */ }
         });
     });
 }
@@ -1327,4 +1330,4 @@ async function doLogout() {
     window.location.replace('/login.html');
 }
 
-init();
+init();
