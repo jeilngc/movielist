@@ -253,6 +253,8 @@ async function init() {
     refreshHero();
     startHeroCycling();
     renderAllCategories();
+    loadTurn();
+    initPushUI();
 
     document.getElementById('heroDetailsBtn').addEventListener('click', () => {
         if (currentHeroItemId !== null) openDetail(currentHeroItemId);
@@ -466,10 +468,86 @@ function buildRecapHTML() {
         categorySection;
 }
 
+function buildAwardCard(eyebrow, item, citation) {
+    if (!item) return '';
+    return '' +
+        '<div class="award-card">' +
+        '<div class="recap-eyebrow award-eyebrow">' + escapeHtml(eyebrow) + '</div>' +
+        '<div class="award-body">' +
+        '<img class="award-poster" src="' + escapeHtml(item.poster || PLACEHOLDER_POSTER) + '" alt="' + escapeHtml(item.title) + '" loading="lazy" onerror="this.onerror=null;this.src=PLACEHOLDER_POSTER;">' +
+        '<div class="award-info">' +
+        '<div class="award-title" role="button" tabindex="0" onclick="openDetail(' + item.id + ')">' + escapeHtml(item.title) + '</div>' +
+        '<div class="award-citation">' + citation + '</div>' +
+        '</div></div></div>';
+}
+
+// All-time awards, not tied to a calendar year — the app doesn't record
+// *when* something was watched (only when it's planned to be), so this
+// pulls superlatives from the whole shared library rather than "this year".
+function buildAwardsHTML() {
+    const watched = items.filter(i => i.watched);
+    if (watched.length < 2) {
+        return emptyState('Not enough watched titles yet', 'Rate a few more together and the awards ceremony will unlock.');
+    }
+
+    const mayTop = watched.filter(i => i.watched.may).sort((a, b) => b.watched.may.rating - a.watched.may.rating)[0];
+    const jayTop = watched.filter(i => i.watched.jay).sort((a, b) => b.watched.jay.rating - a.watched.jay.rating)[0];
+
+    const mutual = watched.filter(i => i.watched.may && i.watched.jay);
+    const doubleFives = getDoubleFiveItems();
+    const perfectMatch = doubleFives.length ? doubleFives[doubleFives.length - 1] : null;
+
+    let mostDivisive = null, maxDelta = -1;
+    mutual.forEach(i => {
+        const d = Math.abs(i.watched.may.rating - i.watched.jay.rating);
+        if (d > maxDelta) { maxDelta = d; mostDivisive = i; }
+    });
+    if (maxDelta <= 0) mostDivisive = null;
+
+    const catCounts = {};
+    watched.forEach(i => { catCounts[i.category] = (catCounts[i.category] || 0) + 1; });
+    const topCategory = Object.keys(catCounts).sort((a, b) => catCounts[b] - catCounts[a])[0];
+    let bestOfGenre = null;
+    if (topCategory) {
+        bestOfGenre = watched.filter(i => i.category === topCategory)
+            .sort((a, b) => getAverageRating(b) - getAverageRating(a))[0];
+    }
+
+    let hallOfShame = null, minAvg = 6;
+    watched.forEach(i => {
+        const avg = getAverageRating(i);
+        if (avg > 0 && avg < minAvg) { minAvg = avg; hallOfShame = i; }
+    });
+    // Only call out a "worst" if it's meaningfully behind the pack — no need
+    // to be unkind about a library everyone rated 4+ stars.
+    if (minAvg >= 3.5) hallOfShame = null;
+
+    const cards = [
+        mayTop ? buildAwardCard("MAY'S PICK", mayTop, 'May gave this ' + mayTop.watched.may.rating.toFixed(1) + ' \u2605 \u2014 her highest rating on record.') : '',
+        jayTop ? buildAwardCard("JAY'S PICK", jayTop, 'Jay gave this ' + jayTop.watched.jay.rating.toFixed(1) + ' \u2605 \u2014 his highest rating on record.') : '',
+        perfectMatch ? buildAwardCard('PERFECT MATCH', perfectMatch, 'The rare title you both gave a flawless 5.0.') : '',
+        mostDivisive ? buildAwardCard('MOST DIVISIVE', mostDivisive, 'A ' + maxDelta.toFixed(1) + '-star gap between you two \u2014 your biggest disagreement.') : '',
+        bestOfGenre ? buildAwardCard('BEST ' + escapeHtml(topCategory).toUpperCase(), bestOfGenre, 'Your favorite in your most-watched category, ' + escapeHtml(topCategory) + '.') : '',
+        hallOfShame ? buildAwardCard('THE "NEVER AGAIN" AWARD', hallOfShame, 'Your lowest-rated watch together. Sorry, whoever picked this one.') : ''
+    ].filter(Boolean).join('');
+
+    return '' +
+        '<div class="recap-header">' +
+        '<div class="recap-eyebrow">MAY &amp; JAY PRESENT</div>' +
+        '<h2 class="recap-title">The Movie Night Awards</h2>' +
+        '<p class="awards-subtitle">Superlatives pulled from your whole shared library so far.</p>' +
+        '</div>' +
+        '<div class="recap-section awards-grid">' + cards + '</div>';
+}
+
 function renderAllCategories() {
     const container = document.getElementById('mainContent');
     if (currentFilter === 'recap') {
         container.innerHTML = buildRecapHTML();
+        return;
+    }
+    if (currentFilter === 'awards') {
+        container.innerHTML = buildAwardsHTML();
         return;
     }
     if (currentFilter === 'watchlist') {
@@ -501,7 +579,7 @@ function filterContent(filter, linkElement) {
 
 function handleSearch() {
     const query = document.getElementById('searchInput').value.toLowerCase().trim();
-    if (!query || currentFilter === 'recap') { renderAllCategories(); return; }
+    if (!query || currentFilter === 'recap' || currentFilter === 'awards') { renderAllCategories(); return; }
     let filtered = items.filter(i => i.title.toLowerCase().includes(query));
     if (currentFilter === 'movie' || currentFilter === 'series') filtered = filtered.filter(i => i.type === currentFilter);
     else if (currentFilter === 'alreadyWatched') filtered = filtered.filter(i => i.watched);
@@ -556,6 +634,50 @@ function showToast(message, isError) {
     showToast._timer = setTimeout(() => toast.classList.remove('show'), 2600);
 }
 
+const REACTION_EMOJIS = ['❤️', '😂', '😮', '😢'];
+
+// Reactions live on the *other* person's comment — you can't react to your
+// own. When viewing your own card we just show what your partner left (if
+// anything); on your partner's card you get the picker.
+function buildReactionRow(item, target) {
+    const current = (item.watched[target] && item.watched[target].reaction) || '';
+    if (currentRatingPerson === target) {
+        if (!current) return '';
+        return '<div class="reaction-row reaction-row-readonly"><span class="reaction-chip reaction-chip-active" aria-hidden="true">' + current + '</span><span class="reaction-hint">reacted</span></div>';
+    }
+    return '<div class="reaction-row">' +
+        REACTION_EMOJIS.map((e) =>
+            '<button type="button" class="reaction-chip' + (current === e ? ' reaction-chip-active' : '') + '" ' +
+            'onclick="reactToComment(' + item.id + ', \'' + target + '\', \'' + e + '\')" ' +
+            'aria-label="React with ' + e + '">' + e + '</button>'
+        ).join('') +
+        '</div>';
+}
+
+async function reactToComment(id, target, emoji) {
+    try {
+        const res = await fetch('/api/react', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, target, emoji })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) throw new Error(data.error || 'Failed to react.');
+
+        const idx = items.findIndex((i) => i.id === id);
+        if (idx !== -1) items[idx] = data.item;
+
+        if (currentModalItem && currentModalItem.id === id) {
+            currentModalItem = data.item;
+            document.getElementById('modalBody').innerHTML = buildModalBodyHTML(data.item);
+            wireRateForm(data.item);
+            wirePlanForm(data.item);
+        }
+    } catch (e) {
+        showToast(e.message || 'Something went wrong.', true);
+    }
+}
+
 function buildModalBodyHTML(item) {
     const avg = getAverageRating(item);
     const typeLabel = item.type === 'movie' ? 'Movie' : 'Series';
@@ -569,11 +691,13 @@ function buildModalBodyHTML(item) {
         if (item.watched.may) {
             existingRatingsHtml += '<div class="note-card note-may"><div class="note-card-head">May ★ ' + item.watched.may.rating.toFixed(1) + '</div>';
             if (item.watched.may.comment) existingRatingsHtml += '<p>' + escapeHtml(item.watched.may.comment) + '</p>';
+            existingRatingsHtml += buildReactionRow(item, 'may');
             existingRatingsHtml += '</div>';
         }
         if (item.watched.jay) {
             existingRatingsHtml += '<div class="note-card note-jay"><div class="note-card-head">Jay ★ ' + item.watched.jay.rating.toFixed(1) + '</div>';
             if (item.watched.jay.comment) existingRatingsHtml += '<p>' + escapeHtml(item.watched.jay.comment) + '</p>';
+            existingRatingsHtml += buildReactionRow(item, 'jay');
             existingRatingsHtml += '</div>';
         }
         existingRatingsHtml += '</div>';
@@ -962,6 +1086,124 @@ if ('serviceWorker' in navigator) {
             console.warn('Service worker registration failed.', e);
         });
     });
+}
+
+// --- Movie night reminders (Web Push) ---
+let pushPublicKey = null;
+
+function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const rawData = atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i);
+    return outputArray;
+}
+
+function updatePushButton(subscribed) {
+    const btn = document.getElementById('pushBtn');
+    if (!btn) return;
+    btn.textContent = subscribed ? '🔕 Reminders on' : '🔔 Remind us';
+    btn.classList.toggle('install-btn-active', subscribed);
+}
+
+async function initPushUI() {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+    try {
+        const res = await fetch('/api/push/public-key');
+        const data = await res.json();
+        if (!data.key) return; // VAPID keys aren't configured server-side yet — see SETUP.md
+        pushPublicKey = data.key;
+        const btn = document.getElementById('pushBtn');
+        if (!btn) return;
+        btn.hidden = false;
+        const reg = await navigator.serviceWorker.ready;
+        const existing = await reg.pushManager.getSubscription();
+        updatePushButton(!!existing);
+    } catch (e) {
+        console.warn('Push setup check failed.', e);
+    }
+}
+
+async function togglePushSubscription() {
+    if (!pushPublicKey) return;
+    try {
+        const reg = await navigator.serviceWorker.ready;
+        const existing = await reg.pushManager.getSubscription();
+
+        if (existing) {
+            await existing.unsubscribe();
+            await fetch('/api/push/unsubscribe', { method: 'POST' });
+            updatePushButton(false);
+            showToast('Movie night reminders turned off.');
+            return;
+        }
+
+        if (Notification.permission === 'denied') {
+            showToast('Notifications are blocked for this site in your browser settings.', true);
+            return;
+        }
+
+        const subscription = await reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(pushPublicKey)
+        });
+
+        const res = await fetch('/api/push/subscribe', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ subscription })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) throw new Error(data.error || 'Failed to save subscription.');
+
+        updatePushButton(true);
+        showToast("You'll get a reminder when it's movie night!");
+    } catch (e) {
+        showToast(e.message || 'Could not turn on reminders.', true);
+    }
+}
+
+// --- Pass the remote (fair-turn queue) ---
+let currentTurn = 'may';
+
+async function loadTurn() {
+    try {
+        const res = await fetch('/api/turn');
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.turn === 'may' || data.turn === 'jay') currentTurn = data.turn;
+    } catch (e) {
+        // Non-fatal — the banner just won't show this load.
+        return;
+    }
+    renderTurnBanner();
+}
+
+function renderTurnBanner() {
+    const banner = document.getElementById('turnBanner');
+    if (!banner) return;
+    const name = currentTurn === 'may' ? 'May' : 'Jay';
+    const isYourTurn = currentRatingPerson === currentTurn;
+    banner.className = 'turn-banner turn-' + currentTurn;
+    banner.innerHTML =
+        '<span class="turn-banner-icon" aria-hidden="true">🎙️</span>' +
+        '<span class="turn-banner-text">' + (isYourTurn ? "It's your turn to pick tonight's watch." : "It's " + name + "'s turn to pick tonight's watch.") + '</span>' +
+        (isYourTurn ? '<button type="button" class="turn-pass-btn" onclick="passTurn()">Pass the remote &rarr;</button>' : '');
+    banner.hidden = false;
+}
+
+async function passTurn() {
+    try {
+        const res = await fetch('/api/turn/pass', { method: 'POST' });
+        const data = await res.json();
+        if (!res.ok || !data.ok) throw new Error(data.error || 'Failed to pass the remote.');
+        currentTurn = data.turn;
+        renderTurnBanner();
+        showToast('Passed the remote to ' + (currentTurn === 'may' ? 'May' : 'Jay') + '!');
+    } catch (e) {
+        showToast(e.message || 'Something went wrong.', true);
+    }
 }
 
 async function doLogout() {

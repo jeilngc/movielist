@@ -965,6 +965,43 @@ body {
     flex: 1;
     min-width: 140px;
 }
+.reaction-row {
+    display: flex;
+    gap: 6px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+}
+.reaction-chip {
+    font-size: 0.95rem;
+    line-height: 1;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 999px;
+    padding: 5px 8px;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.15s ease;
+}
+.reaction-chip:hover {
+    background: rgba(255, 255, 255, 0.14);
+}
+.reaction-chip:active {
+    transform: scale(0.92);
+}
+.reaction-chip-active {
+    background: rgba(240, 193, 75, 0.18);
+    border-color: var(--marquee);
+}
+.reaction-row-readonly {
+    align-items: center;
+}
+.reaction-row-readonly .reaction-chip {
+    cursor: default;
+    pointer-events: none;
+}
+.reaction-hint {
+    font-size: 0.72rem;
+    color: var(--paper-dim);
+}
 /* --- Recap --- */
 .recap-header {
     padding: 36px 32px 8px;
@@ -1093,6 +1130,104 @@ body {
     font-size: 0.78rem;
     font-weight: 500;
     color: var(--paper-dim);
+}
+
+/* --- Awards --- */
+.awards-subtitle {
+    font-size: 0.85rem;
+    color: var(--paper-dim);
+    margin-top: -2px;
+}
+.awards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 14px;
+}
+.award-card {
+    background: var(--ink-raised);
+    border-radius: 12px;
+    padding: 16px;
+    border-top: 3px solid var(--marquee);
+}
+.award-eyebrow {
+    margin-bottom: 12px;
+}
+.award-body {
+    display: flex;
+    gap: 14px;
+}
+.award-poster {
+    width: 64px;
+    height: 96px;
+    object-fit: cover;
+    border-radius: 6px;
+    flex: 0 0 auto;
+}
+.award-info {
+    min-width: 0;
+}
+.award-title {
+    font-family: var(--font-display);
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin-bottom: 6px;
+    cursor: pointer;
+}
+.award-citation {
+    font-size: 0.82rem;
+    color: var(--paper-dim);
+    line-height: 1.4;
+}
+
+/* --- Pass the remote (turn banner) --- */
+.turn-banner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 10px 32px;
+    background: var(--ink-raised);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    font-size: 0.85rem;
+}
+.turn-banner-icon {
+    flex: 0 0 auto;
+}
+.turn-banner-text {
+    flex: 1;
+    min-width: 160px;
+}
+.turn-may .turn-banner-text strong,
+.turn-banner.turn-may {
+    border-left: 3px solid var(--may);
+}
+.turn-banner.turn-jay {
+    border-left: 3px solid var(--jay);
+}
+.turn-pass-btn {
+    font-family: var(--font-body);
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--ink);
+    background: var(--marquee);
+    border: none;
+    border-radius: 20px;
+    padding: 6px 14px;
+    cursor: pointer;
+    flex: 0 0 auto;
+    transition: transform 0.15s ease;
+}
+.turn-pass-btn:hover {
+    transform: translateY(-1px);
+}
+.turn-pass-btn:active {
+    transform: scale(0.96);
+}
+
+.install-btn-active {
+    background: rgba(240, 193, 75, 0.18);
+    border-color: var(--marquee);
+    color: var(--marquee);
 }
 
 .existing-ratings .note-card p {
@@ -1491,6 +1626,17 @@ body {
     .recap-disagreement-poster {
         width: 100%;
         height: 180px;
+    }
+    .turn-banner {
+        padding: 8px 14px;
+        font-size: 0.8rem;
+    }
+    .awards-grid {
+        grid-template-columns: 1fr;
+    }
+    .award-poster {
+        width: 56px;
+        height: 84px;
     }
     .category-row {
         gap: 9px;

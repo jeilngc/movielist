@@ -30,6 +30,7 @@
                 <li><a data-filter="watchlist" role="button" tabindex="0" onclick="filterContent('watchlist', this)">Watchlist</a></li>
                 <li><a data-filter="alreadyWatched" role="button" tabindex="0" onclick="filterContent('alreadyWatched', this)">Watched</a></li>
                 <li><a data-filter="recap" role="button" tabindex="0" onclick="filterContent('recap', this)">Recap</a></li>
+                <li><a data-filter="awards" role="button" tabindex="0" onclick="filterContent('awards', this)">Awards</a></li>
             </ul>
         </div>
         <div class="navbar-right">
@@ -38,6 +39,7 @@
                 <input type="text" id="searchInput" placeholder="Search..." oninput="handleSearch()" aria-label="Search titles">
             </div>
                         <button class="install-btn" id="installBtn" onclick="promptInstall()" aria-label="Install this app" hidden>⤓ Install</button>
+                        <button class="install-btn" id="pushBtn" onclick="togglePushSubscription()" aria-label="Turn on movie night reminders" hidden>🔔 Remind us</button>
                         <button class="add-title-btn" id="addTitleBtn" onclick="openAddModal()" aria-label="Add a title">+ Add</button>
             <div class="avatar-mark" aria-label="May and Jay"><span class="a-may"></span><span class="a-jay"></span></div>
             <a class="logout-link" role="button" tabindex="0" onclick="doLogout()" aria-label="Log out">Log out</a>
@@ -54,7 +56,10 @@
         <a data-filter="watchlist" role="button" tabindex="0" onclick="mobileNavSelect('watchlist', this)">Watchlist</a>
         <a data-filter="alreadyWatched" role="button" tabindex="0" onclick="mobileNavSelect('alreadyWatched', this)">Watched</a>
         <a data-filter="recap" role="button" tabindex="0" onclick="mobileNavSelect('recap', this)">Recap</a>
+        <a data-filter="awards" role="button" tabindex="0" onclick="mobileNavSelect('awards', this)">Awards</a>
     </div>
+
+    <div class="turn-banner" id="turnBanner" hidden></div>
 
     <section class="hero" id="hero">
         <div class="hero-backdrop" id="heroBackdrop"></div>

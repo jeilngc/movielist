@@ -8,6 +8,12 @@
     "binding": "ASSETS",
     "not_found_handling": "404-page"
   },
+  // Runs the "movie night reminder" push notification check once a day.
+  // 13:00 UTC ≈ late morning/early afternoon across most timezones — adjust
+  // to whenever you'd actually want a same-day nudge. Cron Triggers use UTC.
+  "triggers": {
+    "crons": ["0 13 * * *"]
+  },
   "kv_namespaces": [
     {
       "binding": "LIBRARY_KV",
