@@ -237,46 +237,6 @@ body {
 .logout-link:hover {
     color: var(--paper);
 }
-.settings-btn {
-    font-family: var(--font-body);
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: var(--paper);
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 20px;
-    padding: 7px 14px;
-    cursor: pointer;
-    white-space: nowrap;
-    flex-shrink: 0;
-    transition: background 0.15s ease, transform 0.15s ease;
-}
-.settings-btn:hover {
-    background: rgba(255, 255, 255, 0.15);
-}
-.settings-btn:active {
-    transform: scale(0.96);
-}
-.settings-menu-wrap {
-    position: relative;
-}
-.settings-menu {
-    position: absolute;
-    top: calc(100% + 8px);
-    right: 0;
-    min-width: 190px;
-    padding: 10px;
-    background: rgba(20, 17, 26, 0.98);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 14px;
-    box-shadow: var(--shadow);
-    z-index: 1200;
-}
-.settings-menu-item {
-    display: block;
-    width: 100%;
-    text-align: left;
-}
 .install-btn {
     font-family: var(--font-body);
     font-size: 0.8rem;
@@ -320,8 +280,7 @@ body {
 @media (max-width: 640px) {
     .logout-link { display: none; }
     .add-title-btn { padding: 6px 11px; font-size: 0.75rem; }
-    .install-btn, .settings-btn { padding: 6px 11px; font-size: 0.75rem; }
-    .settings-menu { right: auto; left: 0; }
+    .install-btn { padding: 6px 11px; font-size: 0.75rem; }
 }
 
 .add-modal {
@@ -456,7 +415,7 @@ body {
 .mobile-nav-overlay a.active-mob {
     color: var(--marquee);
 }
-.mobile-settings-toggle {
+.mobile-menu-action {
     background: transparent;
     border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 999px;
@@ -468,10 +427,8 @@ body {
     min-height: 44px;
     cursor: pointer;
 }
-.mobile-settings-menu {
-    display: flex;
-    justify-content: center;
-    width: 100%;
+.mobile-menu-action.secondary {
+    color: var(--paper-dim);
 }
 
 .hero {

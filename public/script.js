@@ -1166,44 +1166,10 @@ function urlBase64ToUint8Array(base64String) {
 }
 
 function updatePushButton(subscribed) {
-    const btn = document.getElementById('pushBtn') || document.getElementById('mobilePushBtn');
+    const btn = document.getElementById('pushBtn');
     if (!btn) return;
     btn.textContent = subscribed ? '🔕 Turn off reminders' : '🔔 Remind us';
     btn.classList.toggle('install-btn-active', subscribed);
-}
-
-function toggleSettingsMenu() {
-    const wrap = document.getElementById('settingsMenuList');
-    const button = document.getElementById('settingsMenuButton');
-    if (!wrap || !button) return;
-    const isOpen = !wrap.hidden;
-    wrap.hidden = isOpen;
-    button.setAttribute('aria-expanded', String(!isOpen));
-    if (!isOpen) {
-        document.addEventListener('click', closeSettingsMenuOnOutsideClick);
-    } else {
-        document.removeEventListener('click', closeSettingsMenuOnOutsideClick);
-    }
-}
-
-function closeSettingsMenuOnOutsideClick(event) {
-    const wrap = document.getElementById('settingsMenuList');
-    const button = document.getElementById('settingsMenuButton');
-    if (!wrap || !button) return;
-    if (!wrap.contains(event.target) && !button.contains(event.target)) {
-        wrap.hidden = true;
-        button.setAttribute('aria-expanded', 'false');
-        document.removeEventListener('click', closeSettingsMenuOnOutsideClick);
-    }
-}
-
-function toggleMobileSettingsMenu() {
-    const menu = document.getElementById('mobileSettingsMenu');
-    const button = document.getElementById('mobileSettingsToggle');
-    if (!menu || !button) return;
-    const isOpen = !menu.hidden;
-    menu.hidden = isOpen;
-    button.setAttribute('aria-expanded', String(!isOpen));
 }
 
 async function initPushUI() {
@@ -1216,7 +1182,7 @@ async function initPushUI() {
         const data = await res.json();
         if (!data.key) return; // VAPID keys aren't configured server-side yet — see SETUP.md
         pushPublicKey = data.key;
-        const btn = document.getElementById('pushBtn') || document.getElementById('mobilePushBtn');
+        const btn = document.getElementById('pushBtn');
         if (!btn) return;
         btn.hidden = false;
         const reg = await navigator.serviceWorker.ready;

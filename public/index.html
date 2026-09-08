@@ -39,12 +39,6 @@
                 <input type="text" id="searchInput" placeholder="Search..." oninput="handleSearch()" aria-label="Search titles">
             </div>
             <button class="install-btn" id="installBtn" onclick="promptInstall()" aria-label="Install this app" hidden>⤓ Install</button>
-            <div class="settings-menu-wrap">
-                <button class="settings-btn" id="settingsMenuButton" onclick="toggleSettingsMenu()" aria-expanded="false" aria-controls="settingsMenuList">⚙ Settings</button>
-                <div class="settings-menu" id="settingsMenuList" hidden>
-                    <button class="install-btn settings-menu-item" id="pushBtn" onclick="togglePushSubscription()" aria-label="Turn on movie night reminders" hidden>🔔 Remind us</button>
-                </div>
-            </div>
             <button class="add-title-btn" id="addTitleBtn" onclick="openAddModal()" aria-label="Add a title">+ Add</button>
             <div class="avatar-mark" aria-label="May and Jay"><span class="a-may"></span><span class="a-jay"></span></div>
             <a class="logout-link" role="button" tabindex="0" onclick="doLogout()" aria-label="Log out">Log out</a>
@@ -62,10 +56,8 @@
         <a data-filter="alreadyWatched" role="button" tabindex="0" onclick="mobileNavSelect('alreadyWatched', this)">Watched</a>
         <a data-filter="recap" role="button" tabindex="0" onclick="mobileNavSelect('recap', this)">Recap</a>
         <a data-filter="awards" role="button" tabindex="0" onclick="mobileNavSelect('awards', this)">Awards</a>
-        <button class="mobile-settings-toggle" id="mobileSettingsToggle" onclick="toggleMobileSettingsMenu()" aria-expanded="false">Settings</button>
-        <div class="mobile-settings-menu" id="mobileSettingsMenu" hidden>
-            <button class="install-btn settings-menu-item" id="mobilePushBtn" onclick="togglePushSubscription(); toggleMobileSettingsMenu();" aria-label="Turn on movie night reminders" hidden>🔔 Remind us</button>
-        </div>
+        <button class="mobile-menu-action" id="pushBtn" onclick="togglePushSubscription(); closeMobileMenu();" aria-label="Turn on movie night reminders" hidden>🔔 Remind us</button>
+        <button class="mobile-menu-action secondary" onclick="doLogout()" aria-label="Log out">Log out</button>
     </div>
 
     <div class="turn-banner" id="turnBanner" hidden></div>
