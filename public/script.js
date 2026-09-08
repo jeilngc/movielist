@@ -1166,10 +1166,15 @@ function urlBase64ToUint8Array(base64String) {
 }
 
 function updatePushButton(subscribed) {
-    const btn = document.getElementById('pushBtn');
+    const btn = document.getElementById('pushBtn') || document.getElementById('settingsPushBtn');
     if (!btn) return;
-    btn.textContent = subscribed ? '🔕 Reminders on' : '🔔 Remind us';
+    btn.textContent = subscribed ? '🔕 Turn off reminders' : '🔔 Remind us';
     btn.classList.toggle('install-btn-active', subscribed);
+    btn.classList.toggle('settings-push-btn-active', subscribed);
+}
+
+function openSettingsPage() {
+    window.location.href = '/settings.html';
 }
 
 async function initPushUI() {
@@ -1182,7 +1187,7 @@ async function initPushUI() {
         const data = await res.json();
         if (!data.key) return; // VAPID keys aren't configured server-side yet — see SETUP.md
         pushPublicKey = data.key;
-        const btn = document.getElementById('pushBtn');
+        const btn = document.getElementById('pushBtn') || document.getElementById('settingsPushBtn');
         if (!btn) return;
         btn.hidden = false;
         const reg = await navigator.serviceWorker.ready;
@@ -1330,4 +1335,8 @@ async function doLogout() {
     window.location.replace('/login.html');
 }
 
-init();
+if (document.getElementById('heroTitle') && document.getElementById('mainContent') && document.getElementById('navLinks')) {
+    init();
+} else if (document.getElementById('settingsPushBtn')) {
+    initPushUI();
+}

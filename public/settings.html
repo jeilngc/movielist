@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#14111a">
+    <title>Settings · May & Jay</title>
+    <link rel="manifest" href="/manifest.json">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,450;0,9..144,600;0,9..144,700;1,9..144,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="navbar" id="navbar">
+        <div class="navbar-left">
+            <div class="logo-mark" onclick="location.href='/'" aria-label="Home" role="button" tabindex="0">
+                <span class="logo-dots"><span class="d-may"></span><span class="d-jay"></span></span>
+                <span class="logo">May &amp; Jay</span>
+            </div>
+        </div>
+        <div class="navbar-right">
+            <button class="settings-btn" onclick="location.href='/'" aria-label="Back to library">← Back</button>
+        </div>
+    </nav>
+
+    <main class="settings-page">
+        <section class="settings-card">
+            <p class="settings-eyebrow">Preferences</p>
+            <h1>Settings</h1>
+            <div class="settings-item">
+                <div>
+                    <h2>Movie night reminders</h2>
+                    <p>Get a browser notification when it’s time for a reminder.</p>
+                </div>
+                <button class="install-btn settings-push-btn" id="settingsPushBtn" onclick="togglePushSubscription()" aria-label="Turn on movie night reminders" hidden>🔔 Remind us</button>
+            </div>
+            <div class="settings-item danger-item">
+                <div>
+                    <h2>Log out</h2>
+                    <p>Sign out of the app and return to the login page.</p>
+                </div>
+                <button class="logout-link settings-logout-btn" type="button" onclick="doLogout()">Log out</button>
+            </div>
+        </section>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
