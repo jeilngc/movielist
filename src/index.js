@@ -244,7 +244,7 @@ async function handleRate(request, env, authedPerson) {
     }
 
     try {
-        const { id, rating, comment } = await request.json();
+        const { id, rating, comment, watchedDate } = await request.json();
         // `person` is always the authenticated identity from the cookie now —
         // ignores any person field the client might send, so May can never
         // accidentally (or deliberately) save a rating as Jay or vice versa.
@@ -252,6 +252,16 @@ async function handleRate(request, env, authedPerson) {
 
         if (!id) {
             return json({ ok: false, error: 'Invalid rating data.' }, 400);
+        }
+
+        // watchedDate is optional and, if present, must be a real YYYY-MM-DD date.
+        let normalizedWatchedDate = null;
+        if (watchedDate) {
+            const isValidFormat = /^\d{4}-\d{2}-\d{2}$/.test(watchedDate);
+            if (!isValidFormat || Number.isNaN(new Date(`${watchedDate}T00:00:00`).getTime())) {
+                return json({ ok: false, error: 'Invalid watched date.' }, 400);
+            }
+            normalizedWatchedDate = watchedDate;
         }
 
         const raw = await env.LIBRARY_KV.get(KV_KEY);
@@ -274,6 +284,7 @@ async function handleRate(request, env, authedPerson) {
                 delete item.watched[person];
                 if (Object.keys(item.watched).length === 0) {
                     item.watched = null;
+                    delete item.watchedDate;
                 }
             }
         } else {
@@ -284,6 +295,11 @@ async function handleRate(request, env, authedPerson) {
                 rating: numericRating,
                 comment: String(comment || '')
             };
+            // Shared across both people — whoever rates (last) sets it. Simple
+            // by design: the app has no notion of "who's right" about the date.
+            if (normalizedWatchedDate) {
+                item.watchedDate = normalizedWatchedDate;
+            }
         }
 
         items[itemIndex] = item;

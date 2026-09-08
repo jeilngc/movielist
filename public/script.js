@@ -4,6 +4,7 @@
 
 const PLACEHOLDER_POSTER = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="300" height="450"><rect width="100%" height="100%" fill="#262030"/><text x="50%" y="50%" fill="#a89d9a" font-family="sans-serif" font-size="18" text-anchor="middle" dominant-baseline="middle">No image</text></svg>');
 const PLACEHOLDER_BANNER = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450"><rect width="100%" height="100%" fill="#1c1922"/><text x="50%" y="50%" fill="#a89d9a" font-family="sans-serif" font-size="22" text-anchor="middle" dominant-baseline="middle">No image</text></svg>');
+const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
 let categoryOrder = defaultCategoryOrder.slice();
 let items = [];
@@ -85,7 +86,9 @@ async function loadItems() {
     }
 
     if (res.status === 401) {
-        window.location.href = '/login.html';
+        // replace(), not href — don't leave the (now-invalid) app page in
+        // history, or the back button would bounce right back into it.
+        window.location.replace('/login.html');
         return 'redirect';
     }
 
@@ -255,6 +258,7 @@ async function init() {
     renderAllCategories();
     loadTurn();
     initPushUI();
+    setupIosInstallHint();
 
     document.getElementById('heroDetailsBtn').addEventListener('click', () => {
         if (currentHeroItemId !== null) openDetail(currentHeroItemId);
@@ -418,27 +422,6 @@ function buildRecapHTML() {
             '</div></div></div></div>';
     }
 
-    let disagreementSection = '';
-    if (mutual.length) {
-        const biggest = mutual.slice().sort((a, b) =>
-            Math.abs(b.watched.may.rating - b.watched.jay.rating) - Math.abs(a.watched.may.rating - a.watched.jay.rating)
-        )[0];
-        const delta = Math.abs(biggest.watched.may.rating - biggest.watched.jay.rating);
-        if (delta > 0) {
-            disagreementSection =
-                '<div class="recap-section">' +
-                '<div class="recap-eyebrow">BIGGEST DISAGREEMENT</div>' +
-                '<div class="recap-disagreement">' +
-                '<img class="recap-disagreement-poster" src="' + escapeHtml(biggest.poster || PLACEHOLDER_POSTER) + '" alt="' + escapeHtml(biggest.title) + '" loading="lazy" onerror="this.onerror=null;this.src=PLACEHOLDER_POSTER;">' +
-                '<div class="recap-disagreement-body">' +
-                '<div class="recap-disagreement-title" role="button" tabindex="0" onclick="openDetail(' + biggest.id + ')">' + escapeHtml(biggest.title) + '</div>' +
-                '<div class="existing-ratings">' +
-                '<div class="note-card note-may"><div class="note-card-head">May ★ ' + biggest.watched.may.rating.toFixed(1) + '</div>' + (biggest.watched.may.comment ? '<p>' + escapeHtml(biggest.watched.may.comment) + '</p>' : '') + '</div>' +
-                '<div class="note-card note-jay"><div class="note-card-head">Jay ★ ' + biggest.watched.jay.rating.toFixed(1) + '</div>' + (biggest.watched.jay.comment ? '<p>' + escapeHtml(biggest.watched.jay.comment) + '</p>' : '') + '</div>' +
-                '</div></div></div></div>';
-        }
-    }
-
     let matchesSection = '';
     const doubleFives = getDoubleFiveItems();
     if (doubleFives.length) {
@@ -465,7 +448,6 @@ function buildRecapHTML() {
         '</div>' +
         statsRow +
         syncSection +
-        disagreementSection +
         matchesSection +
         categorySection;
 }
@@ -483,9 +465,55 @@ function buildAwardCard(eyebrow, item, citation) {
         '</div></div></div>';
 }
 
-// All-time awards, not tied to a calendar year — the app doesn't record
-// *when* something was watched (only when it's planned to be), so this
-// pulls superlatives from the whole shared library rather than "this year".
+// Groups watched titles by year/month based on `watchedDate` — the day
+// picker shown in the rate form. Titles rated without a date just don't
+// show up here (no schema migration needed for the existing library).
+function buildAwardsTimelineHTML(watched) {
+    const dated = watched.filter(i => i.watchedDate);
+    if (!dated.length) {
+        return '' +
+            '<div class="recap-section">' +
+            '<div class="recap-eyebrow">WATCH TIMELINE</div>' +
+            '<p class="awards-timeline-empty">Set the "watched on" date next time you rate something, and your month-by-month timeline will build up here.</p>' +
+            '</div>';
+    }
+
+    const byYear = {};
+    dated.forEach((item) => {
+        const [y, m] = item.watchedDate.split('-');
+        const year = Number(y);
+        const month = Number(m) - 1;
+        if (!byYear[year]) byYear[year] = {};
+        if (!byYear[year][month]) byYear[year][month] = [];
+        byYear[year][month].push(item);
+    });
+
+    const years = Object.keys(byYear).map(Number).sort((a, b) => b - a);
+
+    const yearBlocks = years.map((year) => {
+        const months = Object.keys(byYear[year]).map(Number).sort((a, b) => b - a);
+        const monthBlocks = months.map((month) => {
+            const monthItems = byYear[year][month].slice().sort((a, b) => (b.watchedDate || '').localeCompare(a.watchedDate || ''));
+            return '' +
+                '<div class="timeline-month">' +
+                '<div class="timeline-month-head">' + MONTH_NAMES[month] +
+                ' <span class="timeline-month-count">' + monthItems.length + (monthItems.length === 1 ? ' title' : ' titles') + '</span></div>' +
+                '<div class="category-row">' + monthItems.map((i) => createCardHTML(i, false)).join('') + '</div>' +
+                '</div>';
+        }).join('');
+        return '<div class="timeline-year"><div class="timeline-year-head">' + year + '</div>' + monthBlocks + '</div>';
+    }).join('');
+
+    return '' +
+        '<div class="recap-section">' +
+        '<div class="recap-eyebrow">WATCH TIMELINE</div>' +
+        yearBlocks +
+        '</div>';
+}
+
+// All-time awards ranked from your whole shared library. (The month-by-month
+// breakdown below this, grouped by the "watched on" date you set when rating,
+// is the closer equivalent to a yearly wrap-up.)
 function buildAwardsHTML() {
     const watched = items.filter(i => i.watched);
     if (watched.length < 2) {
@@ -495,16 +523,8 @@ function buildAwardsHTML() {
     const mayTop = watched.filter(i => i.watched.may).sort((a, b) => b.watched.may.rating - a.watched.may.rating)[0];
     const jayTop = watched.filter(i => i.watched.jay).sort((a, b) => b.watched.jay.rating - a.watched.jay.rating)[0];
 
-    const mutual = watched.filter(i => i.watched.may && i.watched.jay);
     const doubleFives = getDoubleFiveItems();
     const perfectMatch = doubleFives.length ? doubleFives[doubleFives.length - 1] : null;
-
-    let mostDivisive = null, maxDelta = -1;
-    mutual.forEach(i => {
-        const d = Math.abs(i.watched.may.rating - i.watched.jay.rating);
-        if (d > maxDelta) { maxDelta = d; mostDivisive = i; }
-    });
-    if (maxDelta <= 0) mostDivisive = null;
 
     const catCounts = {};
     watched.forEach(i => { catCounts[i.category] = (catCounts[i.category] || 0) + 1; });
@@ -528,7 +548,6 @@ function buildAwardsHTML() {
         mayTop ? buildAwardCard("MAY'S PICK", mayTop, 'May gave this ' + mayTop.watched.may.rating.toFixed(1) + ' \u2605 \u2014 her highest rating on record.') : '',
         jayTop ? buildAwardCard("JAY'S PICK", jayTop, 'Jay gave this ' + jayTop.watched.jay.rating.toFixed(1) + ' \u2605 \u2014 his highest rating on record.') : '',
         perfectMatch ? buildAwardCard('PERFECT MATCH', perfectMatch, 'The rare title you both gave a flawless 5.0.') : '',
-        mostDivisive ? buildAwardCard('MOST DIVISIVE', mostDivisive, 'A ' + maxDelta.toFixed(1) + '-star gap between you two \u2014 your biggest disagreement.') : '',
         bestOfGenre ? buildAwardCard('BEST ' + escapeHtml(topCategory).toUpperCase(), bestOfGenre, 'Your favorite in your most-watched category, ' + escapeHtml(topCategory) + '.') : '',
         hallOfShame ? buildAwardCard('THE "NEVER AGAIN" AWARD', hallOfShame, 'Your lowest-rated watch together. Sorry, whoever picked this one.') : ''
     ].filter(Boolean).join('');
@@ -539,7 +558,8 @@ function buildAwardsHTML() {
         '<h2 class="recap-title">The Movie Night Awards</h2>' +
         '<p class="awards-subtitle">Superlatives pulled from your whole shared library so far.</p>' +
         '</div>' +
-        '<div class="recap-section awards-grid">' + cards + '</div>';
+        '<div class="recap-section awards-grid">' + cards + '</div>' +
+        buildAwardsTimelineHTML(watched);
 }
 
 function renderAllCategories() {
@@ -795,10 +815,17 @@ function wirePlanForm(item) {
     }
 }
 
+function todayDateStr() {
+    const d = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+}
+
 function buildRateFormHTML(item) {
     const existing = item.watched && item.watched[currentRatingPerson];
     const startRating = existing ? existing.rating : 0;
     const startComment = existing ? (existing.comment || '') : '';
+    const startDate = item.watchedDate || todayDateStr();
     const personLabel = currentRatingPerson === 'may' ? 'May' : 'Jay';
     const previewText = startRating > 0 ? (ratingToStars(startRating) + ' ' + Number(startRating).toFixed(1)) : 'Not yet rated';
     return '' +
@@ -811,6 +838,8 @@ function buildRateFormHTML(item) {
         '<span class="star-preview" id="starPreview">' + previewText + '</span>' +
         '</div>' +
         '<textarea id="rateComment" class="rate-comment" placeholder="Add a comment (optional)" maxlength="1000">' + escapeHtml(startComment) + '</textarea>' +
+        '<label class="rate-watched-date-label" for="rateWatchedDate">Watched on</label>' +
+        '<input type="date" id="rateWatchedDate" class="rate-watched-date" value="' + escapeHtml(startDate) + '">' +
         '<button type="button" class="btn btn-primary rate-submit-btn" id="rateSubmitBtn">' + (startRating > 0 ? 'Save rating' : 'Save rating') + '</button>' +
         '<div class="rate-status" id="rateStatus"></div>' +
         '</div>';
@@ -845,6 +874,7 @@ function wireRateForm(item) {
         status.classList.remove('rate-error');
         try {
             const ratingValue = Number(range.value);
+            const watchedDateInput = document.getElementById('rateWatchedDate');
             const res = await fetch('/api/rate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -852,7 +882,8 @@ function wireRateForm(item) {
                     id: item.id,
                     person: currentRatingPerson,
                     rating: ratingValue,
-                    comment: comment.value.trim()
+                    comment: comment.value.trim(),
+                    watchedDate: watchedDateInput ? watchedDateInput.value : null
                 })
             });
             const data = await res.json();
@@ -1056,6 +1087,18 @@ document.addEventListener('keydown', e => {
 // --- PWA: install prompt + service worker registration ---
 let deferredInstallPrompt = null;
 
+function isIosDevice() {
+    const ua = navigator.userAgent;
+    const isIphoneOrIpad = /iPad|iPhone|iPod/.test(ua);
+    // iPadOS 13+ identifies as "Macintosh" in the UA string but is touch-capable.
+    const isModernIpad = /Macintosh/.test(ua) && navigator.maxTouchPoints > 1;
+    return isIphoneOrIpad || isModernIpad;
+}
+
+function isStandaloneDisplay() {
+    return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+}
+
 window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredInstallPrompt = e;
@@ -1069,9 +1112,26 @@ window.addEventListener('appinstalled', () => {
     if (btn) btn.hidden = true;
 });
 
+// Safari (iOS/iPadOS) never fires `beforeinstallprompt` and has no
+// programmatic install API at all — "Add to Home Screen" only exists inside
+// the Share sheet. So on iOS we show the same button, but pointed at
+// instructions instead of a native prompt.
+function setupIosInstallHint() {
+    if (!isIosDevice() || isStandaloneDisplay()) return;
+    const btn = document.getElementById('installBtn');
+    if (!btn) return;
+    btn.hidden = false;
+    btn.textContent = '📲 Add to Home Screen';
+}
+
 async function promptInstall() {
     const btn = document.getElementById('installBtn');
-    if (!deferredInstallPrompt) return;
+    if (!deferredInstallPrompt) {
+        if (isIosDevice() && !isStandaloneDisplay()) {
+            showToast('Tap the Share button, then "Add to Home Screen".');
+        }
+        return;
+    }
     deferredInstallPrompt.prompt();
     try {
         await deferredInstallPrompt.userChoice;
@@ -1110,6 +1170,9 @@ function updatePushButton(subscribed) {
 }
 
 async function initPushUI() {
+    // On iOS, PushManager only exists at all when the site has been added to
+    // the home screen and opened from there (iOS 16.4+) — inside a normal
+    // Safari tab this check correctly (and silently) hides the button.
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
     try {
         const res = await fetch('/api/push/public-key');
@@ -1130,6 +1193,23 @@ async function initPushUI() {
 async function togglePushSubscription() {
     if (!pushPublicKey) return;
     try {
+        // Ask for notification permission FIRST, before any await — Safari
+        // (and iOS Safari in particular) is strict about the permission
+        // prompt needing to follow directly from the click that triggered
+        // it, and an earlier await (e.g. for `serviceWorker.ready`) can
+        // occasionally break that association.
+        if (Notification.permission === 'denied') {
+            showToast('Notifications are blocked for this site in your browser settings.', true);
+            return;
+        }
+        if (Notification.permission === 'default') {
+            const permission = await Notification.requestPermission();
+            if (permission !== 'granted') {
+                showToast('Notifications were not allowed.', true);
+                return;
+            }
+        }
+
         const reg = await navigator.serviceWorker.ready;
         const existing = await reg.pushManager.getSubscription();
 
@@ -1138,11 +1218,6 @@ async function togglePushSubscription() {
             await fetch('/api/push/unsubscribe', { method: 'POST' });
             updatePushButton(false);
             showToast('Movie night reminders turned off.');
-            return;
-        }
-
-        if (Notification.permission === 'denied') {
-            showToast('Notifications are blocked for this site in your browser settings.', true);
             return;
         }
 
@@ -1168,6 +1243,7 @@ async function togglePushSubscription() {
 
 // --- Pass the remote (fair-turn queue) ---
 let currentTurn = 'may';
+let turnPassConfirming = false;
 
 async function loadTurn() {
     try {
@@ -1193,14 +1269,36 @@ function renderTurnBanner() {
     const banner = document.getElementById('turnBanner');
     if (!banner) return;
     const name = currentTurn === 'may' ? 'May' : 'Jay';
+    const otherName = currentTurn === 'may' ? 'Jay' : 'May';
     const isYourTurn = currentRatingPerson === currentTurn;
+
+    let actionHtml = '';
+    if (isYourTurn && turnPassConfirming) {
+        actionHtml =
+            '<span class="turn-confirm-text">Pass to ' + otherName + '?</span>' +
+            '<button type="button" class="turn-pass-btn" onclick="passTurn()">Confirm</button>' +
+            '<button type="button" class="turn-cancel-btn" onclick="cancelPassTurn()">Cancel</button>';
+    } else if (isYourTurn) {
+        actionHtml = '<button type="button" class="turn-pass-btn" onclick="requestPassTurn()">Pass the remote &rarr;</button>';
+    }
+
     banner.className = 'turn-banner turn-' + currentTurn;
     banner.innerHTML =
         '<span class="turn-banner-icon" aria-hidden="true">🎙️</span>' +
-        '<span class="turn-banner-text">' + (isYourTurn ? "It's your turn to pick tonight's watch." : "It's " + name + "'s turn to pick tonight's watch.") + '</span>' +
-        (isYourTurn ? '<button type="button" class="turn-pass-btn" onclick="passTurn()">Pass the remote &rarr;</button>' : '');
+        '<span class="turn-banner-text">' + (isYourTurn ? "It's your turn to pick this weekend movie~" : "It's " + name + "'s turn to pick this weekend movie~") + '</span>' +
+        actionHtml;
     banner.hidden = false;
     positionTurnBanner();
+}
+
+function requestPassTurn() {
+    turnPassConfirming = true;
+    renderTurnBanner();
+}
+
+function cancelPassTurn() {
+    turnPassConfirming = false;
+    renderTurnBanner();
 }
 
 async function passTurn() {
@@ -1209,9 +1307,12 @@ async function passTurn() {
         const data = await res.json();
         if (!res.ok || !data.ok) throw new Error(data.error || 'Failed to pass the remote.');
         currentTurn = data.turn;
+        turnPassConfirming = false;
         renderTurnBanner();
         showToast('Passed the remote to ' + (currentTurn === 'may' ? 'May' : 'Jay') + '!');
     } catch (e) {
+        turnPassConfirming = false;
+        renderTurnBanner();
         showToast(e.message || 'Something went wrong.', true);
     }
 }
@@ -1222,7 +1323,8 @@ async function doLogout() {
     } catch (e) {
         // Ignore network errors — we redirect to the login page regardless.
     }
-    window.location.href = '/login.html';
+    // replace(), not href — see the note in loadItems()/login.html.
+    window.location.replace('/login.html');
 }
 
 init();

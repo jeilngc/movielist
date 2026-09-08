@@ -1179,6 +1179,41 @@ body {
     line-height: 1.4;
 }
 
+/* --- Awards: watch timeline --- */
+.awards-timeline-empty {
+    font-size: 0.85rem;
+    color: var(--paper-dim);
+}
+.timeline-year {
+    margin-bottom: 22px;
+}
+.timeline-year:last-child {
+    margin-bottom: 0;
+}
+.timeline-year-head {
+    font-family: var(--font-display);
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: var(--marquee);
+    margin-bottom: 12px;
+}
+.timeline-month {
+    margin-bottom: 18px;
+}
+.timeline-month:last-child {
+    margin-bottom: 0;
+}
+.timeline-month-head {
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+.timeline-month-count {
+    font-weight: 500;
+    color: var(--paper-dim);
+    font-size: 0.78rem;
+}
+
 /* --- Pass the remote (turn banner) --- */
 .turn-banner {
     position: fixed;
@@ -1230,6 +1265,26 @@ body {
 }
 .turn-pass-btn:active {
     transform: scale(0.96);
+}
+.turn-confirm-text {
+    font-size: 0.8rem;
+    color: var(--paper-dim);
+    flex: 0 0 auto;
+}
+.turn-cancel-btn {
+    font-family: var(--font-body);
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--paper);
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    padding: 6px 14px;
+    cursor: pointer;
+    flex: 0 0 auto;
+}
+.turn-cancel-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
 }
 
 .install-btn-active {
@@ -1318,6 +1373,28 @@ body {
     margin-bottom: 14px;
 }
 .rate-comment:focus {
+    outline: none;
+    border-color: var(--may);
+}
+.rate-watched-date-label {
+    display: block;
+    font-size: 0.78rem;
+    color: var(--paper-dim);
+    margin-bottom: 6px;
+}
+.rate-watched-date {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: var(--ink);
+    color: var(--paper);
+    font-family: var(--font-body);
+    font-size: 0.88rem;
+    color-scheme: dark;
+    margin-bottom: 14px;
+}
+.rate-watched-date:focus {
     outline: none;
     border-color: var(--may);
 }
@@ -1756,6 +1833,7 @@ body {
         font-size: 16px;
     }
     .rate-comment,
+    .rate-watched-date,
     .plan-row input[type="date"] {
         font-size: 16px;
     }

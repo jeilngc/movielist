@@ -96,7 +96,10 @@
         if (data.ok) {
           // The server determined who logged in based on which password matched.
           localStorage.setItem('mj_person', data.person);
-          window.location.href = '/';
+          // replace(), not href — this swaps the login page out of history
+          // instead of stacking a new entry on top of it, so the back
+          // button doesn't take you right back to the login screen.
+          window.location.replace('/');
         } else {
           err.textContent = data.error || 'Wrong password.';
           btn.disabled = false;

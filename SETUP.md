@@ -70,7 +70,7 @@ title is due. This needs three more secrets and a one-time key pair:
    npx wrangler secret put VAPID_SUBJECT
    ```
 3. Deploy. `wrangler.jsonc` already includes a daily Cron Trigger
-   (`triggers.crons`, defaults to 13:00 UTC) that checks for anything
+   (`triggers.crons`, defaults to 4:00 UTC) that checks for anything
    planned for today and pushes a reminder — adjust the hour to whatever
    local time actually makes sense for you two.
 4. In the app, tap **🔔 Remind us** in the navbar (only appears once the
@@ -85,6 +85,22 @@ been exercised against a live push service in development. The
 subscribe/unsubscribe endpoints and the service worker's notification
 display are lower-risk, more conventional code if something needs
 debugging.
+
+## iOS notes
+iOS Safari supports PWAs and Web Push, but with real differences from
+Android/Chrome — the app already accounts for these, but worth knowing:
+- Safari never fires `beforeinstallprompt`, so there's no native "Install"
+  popup. The **Install** button becomes **"📲 Add to Home Screen"** on iOS
+  instead, and tapping it shows a toast pointing to Share → Add to Home
+  Screen, since that's the only way to install on iOS.
+- Web Push on iOS requires **iOS 16.4+** *and* the app must be opened from
+  its home-screen icon (standalone mode) — a subscription attempt from a
+  regular Safari tab won't work, and the **🔔 Remind us** button correctly
+  stays hidden in that case rather than erroring.
+- Offline caching (the service worker) works in a plain Safari tab too, but
+  Safari's storage eviction (ITP) can clear it after about a week of
+  inactivity if the site was never added to the home screen — installed
+  PWAs are more persistent.
 
 ## Why this looks different from a "classic Pages" setup
 Cloudflare has two different deploy models that both live under

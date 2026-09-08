@@ -8,11 +8,12 @@
     "binding": "ASSETS",
     "not_found_handling": "404-page"
   },
-  // Runs the "movie night reminder" push notification check once a day.
-  // 13:00 UTC ≈ late morning/early afternoon across most timezones — adjust
-  // to whenever you'd actually want a same-day nudge. Cron Triggers use UTC.
+  // Runs the "movie night reminder" push notification check once a day, at
+  // 4:00 UTC, on the day a planned title is due. Cron Triggers use UTC —
+  // adjust the hour if you'd rather the check (and reminder) land at a
+  // different local time.
   "triggers": {
-    "crons": ["0 13 * * *"]
+    "crons": ["0 4 * * *"]
   },
   "kv_namespaces": [
     {
