@@ -268,9 +268,11 @@ async function init() {
 
     window.addEventListener('scroll', () => {
         document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 40);
+        positionTurnBanner();
     });
     window.addEventListener('resize', () => {
         if (window.innerWidth > 768 && mobileMenuOpen) closeMobileMenu();
+        positionTurnBanner();
     });
 }
 
@@ -1180,6 +1182,13 @@ async function loadTurn() {
     renderTurnBanner();
 }
 
+function positionTurnBanner() {
+    const navbar = document.getElementById('navbar');
+    const banner = document.getElementById('turnBanner');
+    if (!navbar || !banner) return;
+    banner.style.top = navbar.offsetHeight + 'px';
+}
+
 function renderTurnBanner() {
     const banner = document.getElementById('turnBanner');
     if (!banner) return;
@@ -1191,6 +1200,7 @@ function renderTurnBanner() {
         '<span class="turn-banner-text">' + (isYourTurn ? "It's your turn to pick tonight's watch." : "It's " + name + "'s turn to pick tonight's watch.") + '</span>' +
         (isYourTurn ? '<button type="button" class="turn-pass-btn" onclick="passTurn()">Pass the remote &rarr;</button>' : '');
     banner.hidden = false;
+    positionTurnBanner();
 }
 
 async function passTurn() {

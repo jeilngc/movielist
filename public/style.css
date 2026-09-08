@@ -1181,14 +1181,22 @@ body {
 
 /* --- Pass the remote (turn banner) --- */
 .turn-banner {
+    position: fixed;
+    left: 0;
+    right: 0;
+    z-index: 999;
     display: flex;
     align-items: center;
     gap: 10px;
     flex-wrap: wrap;
     padding: 10px 32px;
-    background: var(--ink-raised);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgba(20, 17, 26, 0.92);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
     font-size: 0.85rem;
+    transition: top 0.2s ease;
 }
 .turn-banner-icon {
     flex: 0 0 auto;
